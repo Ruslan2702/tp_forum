@@ -46,7 +46,8 @@ func (env *Env) createThread(w http.ResponseWriter, r *http.Request) {
 
 	thread := &models.Thread{}
 	body, _ := ioutil.ReadAll(r.Body)
-	json.Unmarshal(body, thread)
+	// json.Unmarshal(body, thread)
+	thread.UnmarshalJSON(body)
 	thread.Forum = forum
 
 	_, has := models.GetUserByNickname(env.db, thread.Author)
@@ -72,7 +73,8 @@ func (env *Env) createThread(w http.ResponseWriter, r *http.Request) {
 	if thread.Slug != "" {
 		oldThread, has := models.GetThreadBySlug(env.db, thread.Slug)
 		if has {
-			outStr, _ := json.Marshal(oldThread)
+			// outStr, _ := json.Marshal(oldThread)
+			outStr, _ := oldThread.MarshalJSON()
 			w.WriteHeader(http.StatusConflict)
 			w.Write(outStr)
 			return
@@ -83,7 +85,8 @@ func (env *Env) createThread(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(err)
 
 	w.WriteHeader(http.StatusCreated)
-	outStr, _ := json.Marshal(thread)
+	// outStr, _ := json.Marshal(thread)
+	outStr, _ := thread.MarshalJSON()
 	w.Write(outStr)
 }
 
@@ -122,11 +125,13 @@ func (env *Env) updateThread(w http.ResponseWriter, r *http.Request) {
 
 	newThread := &models.Thread{}
 	body, _ := ioutil.ReadAll(r.Body)
-	json.Unmarshal(body, &newThread)
+	// json.Unmarshal(body, &newThread)
+	newThread.UnmarshalJSON(body)
 
 	models.UpdateThread(env.db, ThreadId, newThread, oldThread)
 
-	outStr, _ := json.Marshal(oldThread)
+	// outStr, _ := json.Marshal(oldThread)
+	outStr, _ := oldThread.MarshalJSON()
 	w.WriteHeader(http.StatusOK)
 	w.Write(outStr)
 }
@@ -164,7 +169,8 @@ func (env *Env) detailsThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	outStr, _ := json.Marshal(oldThread)
+	// outStr, _ := json.Marshal(oldThread)
+	outStr, _ := oldThread.MarshalJSON()
 	w.WriteHeader(http.StatusOK)
 	w.Write(outStr)
 }

@@ -22,8 +22,10 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 
 	json.Unmarshal(body, &posts)
+	// posts.UnmarshalJSON(body)
 
 	allPosts := make([]*models.Post, 0)
+	// allPosts := models.Post{}
 	// savedCreated := ""
 
 	var has bool
@@ -189,7 +191,8 @@ func (env *Env) updatePost(w http.ResponseWriter, r *http.Request) {
 
 	post := &models.Post{}
 	body, _ := ioutil.ReadAll(r.Body)
-	json.Unmarshal(body, &post)
+	// json.Unmarshal(body, &post)
+	post.UnmarshalJSON(body)
 
 	if post.Message != "" {
 		if post.Message != oldPost.Message {
@@ -198,7 +201,8 @@ func (env *Env) updatePost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	outStr, _ := json.Marshal(oldPost)
+	// outStr, _ := json.Marshal(oldPost)
+	outStr, _ := oldPost.MarshalJSON()
 	w.WriteHeader(http.StatusOK)
 	w.Write(outStr)
 }
@@ -253,7 +257,8 @@ func (env *Env) detailsPost(w http.ResponseWriter, r *http.Request) {
 
 		postDetail.MyPost = post
 
-		outStr, _ := json.Marshal(postDetail)
+		// outStr, _ := json.Marshal(postDetail)
+		outStr, _ := postDetail.MarshalJSON()
 		w.WriteHeader(http.StatusOK)
 		w.Write(outStr)
 		return

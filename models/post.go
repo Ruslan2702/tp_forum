@@ -30,7 +30,8 @@ type PostOnly struct {
 	MyPost Post `json:"post,omitempty"`
 }
 
-type Posts []*Post
+//easyjson:json
+type Posts []Post
 
 
 func GetPostById(db *sql.DB, id string) (*Post, bool) {

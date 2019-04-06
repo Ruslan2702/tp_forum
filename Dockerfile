@@ -1,14 +1,8 @@
 FROM golang:1.11.7-stretch AS build
 
 # Копируем исходный код в Docker-контейнер
-RUN ls
-RUN pwd
-RUN echo $GOPATH
-# ADD . /opt/build/golang/
 ADD . /go/src/forum
-#ADD common/ /opt/build/common/
 
-# WORKDIR /opt/build/golang
 WORKDIR /go/src/forum
 
 # Собираем и устанавливаем пакет

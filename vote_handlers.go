@@ -17,7 +17,8 @@ func (env *Env) createVote(w http.ResponseWriter, r *http.Request) {
 	vote := &models.Vote{}
 	body, _ := ioutil.ReadAll(r.Body)
 
-	json.Unmarshal(body, vote)
+	// json.Unmarshal(body, vote)
+	vote.UnmarshalJSON(body)
 
 	has := false
 	oldThread := &models.Thread{}
@@ -49,7 +50,8 @@ func (env *Env) createVote(w http.ResponseWriter, r *http.Request) {
 	_, val := models.CreateVote(env.db, vote)
 	oldThread.Votes = val
 
-	outStr, _ := json.Marshal(oldThread)
+	// outStr, _ := json.Marshal(oldThread)
+	outStr, _ := oldThread.MarshalJSON()
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(outStr)

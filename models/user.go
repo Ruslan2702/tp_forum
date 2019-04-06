@@ -14,6 +14,8 @@ type User struct {
 	Email    string `json:"email"`
 }
 
+type Users []*User
+
 
 func UpdateUser(db *sql.DB, user *User) error {
 	query := `

@@ -15,7 +15,8 @@ func (env *Env) updateUser(w http.ResponseWriter, r *http.Request) {
 
 	user := &models.User{}
 	body, _ := ioutil.ReadAll(r.Body)
-	json.Unmarshal(body, &user)
+	// json.Unmarshal(body, &user)
+	user.UnmarshalJSON(body)
 	user.Nickname = nickname
 
 	_, has := models.GetUserByNickname(env.db, nickname)
@@ -38,7 +39,8 @@ func (env *Env) updateUser(w http.ResponseWriter, r *http.Request) {
 
 	models.UpdateUser(env.db, user)
 
-	outStr, _ := json.Marshal(user)
+	// outStr, _ := json.Marshal(user)
+	outStr, _ := user.MarshalJSON()
 	w.WriteHeader(http.StatusOK)
 	w.Write(outStr)
 }
@@ -49,7 +51,8 @@ func (env *Env) profileUser(w http.ResponseWriter, r *http.Request) {
 
 	user, has := models.GetUserByNickname(env.db, nickname)
 	if has {
-		outStr, _ := json.Marshal(user)
+		// outStr, _ := json.Marshal(user)
+		outStr, _ := user.MarshalJSON()
 		w.WriteHeader(http.StatusOK)
 		w.Write(outStr)
 		return
@@ -67,7 +70,8 @@ func (env *Env) createUser(w http.ResponseWriter, r *http.Request) {
 
 	user := models.User{}
 	body, _ := ioutil.ReadAll(r.Body)
-	json.Unmarshal(body, &user)
+	// json.Unmarshal(body, &user)
+	user.UnmarshalJSON(body)
 	user.Nickname = nickname
 
 	users, added := models.CreateUser(env.db, &user)
