@@ -6,7 +6,7 @@ ADD . /go/src/forum
 WORKDIR /go/src/forum
 
 # Собираем и устанавливаем пакет
-RUN go get "github.com/lib/pq" && go get "github.com/gorilla/mux"
+RUN go get "github.com/lib/pq" && go get "github.com/gorilla/mux" && go get github.com/mailru/easyjson/...
 RUN go build 
 
 FROM ubuntu:18.04 AS release
