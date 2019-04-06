@@ -12,6 +12,7 @@ type Forum struct {
 	Threads int32 `json:"threads,omitempty"`
 }
 
+
 func CreateForum(db *sql.DB, forum *Forum) bool {
 	query := `
 		INSERT INTO forums (title, user_nickname, slug, posts, threads)
@@ -23,6 +24,7 @@ func CreateForum(db *sql.DB, forum *Forum) bool {
 	_ = err
 	return true
 }
+
 
 func GetForumBySlug(db *sql.DB, slug string) (*Forum, bool) {
 	forum := Forum{}

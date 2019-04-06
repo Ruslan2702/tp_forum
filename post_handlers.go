@@ -264,3 +264,42 @@ func (env *Env) detailsPost(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 	w.Write(outStr)
 }
+
+
+func (env *Env) getPostsList(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	thread := vars["slug"]
+
+	var has bool
+	oldThread := &models.Thread{}
+	var msg map[string]string
+	var ThreadId string
+
+	if _, err := strconv.Atoi(thread); err == nil {
+		oldThread, has = models.GetThreadById(env.db, thread)
+		ThreadId = thread
+		msg = map[string]string{"message": "Can't find thread by id: " + thread}
+	} else {
+		oldThread, has = models.GetThreadBySlug(env.db, thread)
+		ThreadId = strconv.FormatInt(oldThread.Id, 10)
+		msg = map[string]string{"message": "Can't find thread by slug: " + thread}
+	}
+
+	if !has {
+		outStr, _ := json.Marshal(msg)
+		w.WriteHeader(http.StatusNotFound)
+		w.Write(outStr)
+		return
+	}
+
+	limit := r.FormValue("limit")
+	since := r.FormValue("since")
+	sort := r.FormValue("sort")
+	desc := r.FormValue("desc")
+
+	posts, _ := models.GetPostsList(env.db, ThreadId, limit, since, sort, desc)
+
+	outStr, _ := json.Marshal(posts)
+	w.WriteHeader(http.StatusOK)
+	w.Write(outStr)
+}

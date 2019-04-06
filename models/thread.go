@@ -17,6 +17,7 @@ type Thread struct {
 	Created string `json:"created,omitempty"`
 }
 
+
 func GetForumThreads(db *sql.DB, forum string, limit string, since string, desc string) ([]*Thread, bool) {
 	threads := make([]*Thread, 0)
 
@@ -74,6 +75,7 @@ func GetForumThreads(db *sql.DB, forum string, limit string, since string, desc 
 	return threads, true
 }
 
+
 func CreateThread(db *sql.DB, thread *Thread) error {
 	var err error
 
@@ -117,23 +119,6 @@ func CreateThread(db *sql.DB, thread *Thread) error {
 	return err
 }
 
-func GetThreadByTitle(db *sql.DB, title string) (*Thread, bool) {
-	thread := Thread{}
-
-	query := `
-		SELECT id, title, author, forum, message, votes, slug, created
-		FROM threads
-		WHERE threads.title = $1
-	`
-	err := db.QueryRow(query, title).Scan(&thread.Id, &thread.Title,
-		&thread.Author, &thread.Forum, &thread.Message, &thread.Votes, &thread.Slug, &thread.Created)
-
-	if err != nil {
-		return &thread, false
-	}
-
-	return &thread, true
-}
 
 func GetThreadBySlug(db *sql.DB, slug string) (*Thread, bool) {
 	thread := Thread{}
@@ -154,6 +139,7 @@ func GetThreadBySlug(db *sql.DB, slug string) (*Thread, bool) {
 	return &thread, true
 }
 
+
 func GetThreadById(db *sql.DB, id string) (*Thread, bool) {
 	thread := Thread{}
 
@@ -172,6 +158,7 @@ func GetThreadById(db *sql.DB, id string) (*Thread, bool) {
 
 	return &thread, true
 }
+
 
 func UpdateThread(db *sql.DB, id int64, newThread *Thread, oldThread *Thread) error {
 	query := `

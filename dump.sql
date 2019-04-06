@@ -61,187 +61,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: forums; Type: TABLE; Schema: public; Owner: docker
---
-
-CREATE TABLE public.forums (
-    id bigint NOT NULL,
-    title character varying(150) NOT NULL,
-    user_nickname public.citext NOT NULL,
-    slug public.citext NOT NULL,
-    posts bigint DEFAULT 0,
-    threads bigint DEFAULT 0
-);
-
-
-ALTER TABLE public.forums OWNER TO docker;
-
---
--- Name: forums_id_seq; Type: SEQUENCE; Schema: public; Owner: docker
---
-
-CREATE SEQUENCE public.forums_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.forums_id_seq OWNER TO docker;
-
---
--- Name: forums_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: docker
---
-
-ALTER SEQUENCE public.forums_id_seq OWNED BY public.forums.id;
-
-
---
--- Name: forums_user_id_seq; Type: SEQUENCE; Schema: public; Owner: docker
---
-
-CREATE SEQUENCE public.forums_user_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.forums_user_id_seq OWNER TO docker;
-
---
--- Name: forums_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: docker
---
-
-ALTER SEQUENCE public.forums_user_id_seq OWNED BY public.forums.user_nickname;
-
-
---
--- Name: posts; Type: TABLE; Schema: public; Owner: docker
---
-
-CREATE TABLE public.posts (
-    id bigint NOT NULL,
-    parent bigint DEFAULT 0,
-    author public.citext,
-    message text,
-    isedited boolean DEFAULT false,
-    forum character varying(100),
-    thread bigint,
-    created timestamp with time zone DEFAULT now(),
-    path integer[] NOT NULL,
-    path_root integer
-);
-
-
-ALTER TABLE public.posts OWNER TO docker;
-
---
--- Name: posts_author_seq; Type: SEQUENCE; Schema: public; Owner: docker
---
-
-CREATE SEQUENCE public.posts_author_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.posts_author_seq OWNER TO docker;
-
---
--- Name: posts_author_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: docker
---
-
-ALTER SEQUENCE public.posts_author_seq OWNED BY public.posts.author;
-
-
---
--- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: docker
---
-
-CREATE SEQUENCE public.posts_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.posts_id_seq OWNER TO docker;
-
---
--- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: docker
---
-
-ALTER SEQUENCE public.posts_id_seq OWNED BY public.posts.id;
-
-
---
--- Name: threads; Type: TABLE; Schema: public; Owner: docker
---
-
-CREATE TABLE public.threads (
-    id bigint NOT NULL,
-    author public.citext NOT NULL,
-    message text NOT NULL,
-    forum public.citext NOT NULL,
-    votes bigint DEFAULT 0,
-    slug public.citext,
-    created timestamp with time zone DEFAULT now(),
-    title public.citext
-);
-
-
-ALTER TABLE public.threads OWNER TO docker;
-
---
--- Name: threads_author_seq; Type: SEQUENCE; Schema: public; Owner: docker
---
-
-CREATE SEQUENCE public.threads_author_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.threads_author_seq OWNER TO docker;
-
---
--- Name: threads_author_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: docker
---
-
-ALTER SEQUENCE public.threads_author_seq OWNED BY public.threads.author;
-
-
---
--- Name: threads_id_seq; Type: SEQUENCE; Schema: public; Owner: docker
---
-
-CREATE SEQUENCE public.threads_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.threads_id_seq OWNER TO docker;
-
---
--- Name: threads_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: docker
---
-
-ALTER SEQUENCE public.threads_id_seq OWNED BY public.threads.id;
-
-
---
--- Name: users; Type: TABLE; Schema: public; Owner: docker
+-- Name: users; Type: TABLE; Schema: public; Owner: ruslan_shahaev
 --
 
 CREATE TABLE public.users (
@@ -257,10 +77,244 @@ CREATE TABLE public.users (
 );
 
 
-ALTER TABLE public.users OWNER TO docker;
+ALTER TABLE public.users OWNER TO ruslan_shahaev;
 
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: docker
+-- Name: test(integer); Type: FUNCTION; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE FUNCTION public.test(p integer) RETURNS SETOF public.users
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF p = 1 THEN
+    RETURN QUERY SELECT * FROM users;
+  END IF;
+  RETURN;
+END;
+$$;
+
+
+ALTER FUNCTION public.test(p integer) OWNER TO ruslan_shahaev;
+
+--
+-- Name: update_count_posts(); Type: FUNCTION; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE FUNCTION public.update_count_posts() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+UPDATE forums
+SET posts = posts + 1
+WHERE slug = (SELECT forum FROM threads WHERE id = NEW.thread);
+RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.update_count_posts() OWNER TO ruslan_shahaev;
+
+--
+-- Name: update_posts_count(); Type: FUNCTION; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE FUNCTION public.update_posts_count() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+UPDATE forums
+SET threads = threads + 1
+WHERE slug = NEW.forum;
+RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.update_posts_count() OWNER TO ruslan_shahaev;
+
+--
+-- Name: forums; Type: TABLE; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE TABLE public.forums (
+    id bigint NOT NULL,
+    title character varying(150) NOT NULL,
+    user_nickname public.citext NOT NULL,
+    slug public.citext NOT NULL,
+    posts bigint DEFAULT 0,
+    threads bigint DEFAULT 0
+);
+
+
+ALTER TABLE public.forums OWNER TO ruslan_shahaev;
+
+--
+-- Name: forums_id_seq; Type: SEQUENCE; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE SEQUENCE public.forums_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.forums_id_seq OWNER TO ruslan_shahaev;
+
+--
+-- Name: forums_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ruslan_shahaev
+--
+
+ALTER SEQUENCE public.forums_id_seq OWNED BY public.forums.id;
+
+
+--
+-- Name: forums_user_id_seq; Type: SEQUENCE; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE SEQUENCE public.forums_user_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.forums_user_id_seq OWNER TO ruslan_shahaev;
+
+--
+-- Name: forums_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ruslan_shahaev
+--
+
+ALTER SEQUENCE public.forums_user_id_seq OWNED BY public.forums.user_nickname;
+
+
+--
+-- Name: posts; Type: TABLE; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE TABLE public.posts (
+    id bigint NOT NULL,
+    parent bigint DEFAULT 0,
+    author public.citext,
+    message text,
+    isedited boolean DEFAULT false,
+    forum character varying(100),
+    thread bigint,
+    created timestamp with time zone DEFAULT now(),
+    path integer[],
+    path_root integer
+);
+
+
+ALTER TABLE public.posts OWNER TO ruslan_shahaev;
+
+--
+-- Name: posts_author_seq; Type: SEQUENCE; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE SEQUENCE public.posts_author_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.posts_author_seq OWNER TO ruslan_shahaev;
+
+--
+-- Name: posts_author_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ruslan_shahaev
+--
+
+ALTER SEQUENCE public.posts_author_seq OWNED BY public.posts.author;
+
+
+--
+-- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE SEQUENCE public.posts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.posts_id_seq OWNER TO ruslan_shahaev;
+
+--
+-- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ruslan_shahaev
+--
+
+ALTER SEQUENCE public.posts_id_seq OWNED BY public.posts.id;
+
+
+--
+-- Name: threads; Type: TABLE; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE TABLE public.threads (
+    id bigint NOT NULL,
+    author public.citext NOT NULL,
+    message text NOT NULL,
+    forum public.citext NOT NULL,
+    votes bigint DEFAULT 0,
+    slug public.citext,
+    created timestamp with time zone DEFAULT now(),
+    title public.citext
+);
+
+
+ALTER TABLE public.threads OWNER TO ruslan_shahaev;
+
+--
+-- Name: threads_author_seq; Type: SEQUENCE; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE SEQUENCE public.threads_author_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.threads_author_seq OWNER TO ruslan_shahaev;
+
+--
+-- Name: threads_author_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ruslan_shahaev
+--
+
+ALTER SEQUENCE public.threads_author_seq OWNED BY public.threads.author;
+
+
+--
+-- Name: threads_id_seq; Type: SEQUENCE; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE SEQUENCE public.threads_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.threads_id_seq OWNER TO ruslan_shahaev;
+
+--
+-- Name: threads_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ruslan_shahaev
+--
+
+ALTER SEQUENCE public.threads_id_seq OWNED BY public.threads.id;
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: ruslan_shahaev
 --
 
 CREATE SEQUENCE public.users_id_seq
@@ -271,17 +325,17 @@ CREATE SEQUENCE public.users_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.users_id_seq OWNER TO docker;
+ALTER TABLE public.users_id_seq OWNER TO ruslan_shahaev;
 
 --
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: docker
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: votes; Type: TABLE; Schema: public; Owner: docker
+-- Name: votes; Type: TABLE; Schema: public; Owner: ruslan_shahaev
 --
 
 CREATE TABLE public.votes (
@@ -292,10 +346,10 @@ CREATE TABLE public.votes (
 );
 
 
-ALTER TABLE public.votes OWNER TO docker;
+ALTER TABLE public.votes OWNER TO ruslan_shahaev;
 
 --
--- Name: votes_id_seq; Type: SEQUENCE; Schema: public; Owner: docker
+-- Name: votes_id_seq; Type: SEQUENCE; Schema: public; Owner: ruslan_shahaev
 --
 
 CREATE SEQUENCE public.votes_id_seq
@@ -306,17 +360,17 @@ CREATE SEQUENCE public.votes_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.votes_id_seq OWNER TO docker;
+ALTER TABLE public.votes_id_seq OWNER TO ruslan_shahaev;
 
 --
--- Name: votes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: docker
+-- Name: votes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER SEQUENCE public.votes_id_seq OWNED BY public.votes.id;
 
 
 --
--- Name: votes_user_id_seq; Type: SEQUENCE; Schema: public; Owner: docker
+-- Name: votes_user_id_seq; Type: SEQUENCE; Schema: public; Owner: ruslan_shahaev
 --
 
 CREATE SEQUENCE public.votes_user_id_seq
@@ -327,80 +381,80 @@ CREATE SEQUENCE public.votes_user_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.votes_user_id_seq OWNER TO docker;
+ALTER TABLE public.votes_user_id_seq OWNER TO ruslan_shahaev;
 
 --
--- Name: votes_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: docker
+-- Name: votes_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER SEQUENCE public.votes_user_id_seq OWNED BY public.votes.user_nickname;
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: docker
+-- Name: id; Type: DEFAULT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.forums ALTER COLUMN id SET DEFAULT nextval('public.forums_id_seq'::regclass);
 
 
 --
--- Name: user_nickname; Type: DEFAULT; Schema: public; Owner: docker
+-- Name: user_nickname; Type: DEFAULT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.forums ALTER COLUMN user_nickname SET DEFAULT nextval('public.forums_user_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: docker
+-- Name: id; Type: DEFAULT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.posts ALTER COLUMN id SET DEFAULT nextval('public.posts_id_seq'::regclass);
 
 
 --
--- Name: author; Type: DEFAULT; Schema: public; Owner: docker
+-- Name: author; Type: DEFAULT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.posts ALTER COLUMN author SET DEFAULT nextval('public.posts_author_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: docker
+-- Name: id; Type: DEFAULT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.threads ALTER COLUMN id SET DEFAULT nextval('public.threads_id_seq'::regclass);
 
 
 --
--- Name: author; Type: DEFAULT; Schema: public; Owner: docker
+-- Name: author; Type: DEFAULT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.threads ALTER COLUMN author SET DEFAULT nextval('public.threads_author_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: docker
+-- Name: id; Type: DEFAULT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: docker
+-- Name: id; Type: DEFAULT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.votes ALTER COLUMN id SET DEFAULT nextval('public.votes_id_seq'::regclass);
 
 
 --
--- Name: user_nickname; Type: DEFAULT; Schema: public; Owner: docker
+-- Name: user_nickname; Type: DEFAULT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.votes ALTER COLUMN user_nickname SET DEFAULT nextval('public.votes_user_id_seq'::regclass);
 
 
 --
--- Data for Name: forums; Type: TABLE DATA; Schema: public; Owner: docker
+-- Data for Name: forums; Type: TABLE DATA; Schema: public; Owner: ruslan_shahaev
 --
 
 COPY public.forums (id, title, user_nickname, slug, posts, threads) FROM stdin;
@@ -408,21 +462,21 @@ COPY public.forums (id, title, user_nickname, slug, posts, threads) FROM stdin;
 
 
 --
--- Name: forums_id_seq; Type: SEQUENCE SET; Schema: public; Owner: docker
+-- Name: forums_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.forums_id_seq', 27707, true);
+SELECT pg_catalog.setval('public.forums_id_seq', 37776, true);
 
 
 --
--- Name: forums_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: docker
+-- Name: forums_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
 SELECT pg_catalog.setval('public.forums_user_id_seq', 1, false);
 
 
 --
--- Data for Name: posts; Type: TABLE DATA; Schema: public; Owner: docker
+-- Data for Name: posts; Type: TABLE DATA; Schema: public; Owner: ruslan_shahaev
 --
 
 COPY public.posts (id, parent, author, message, isedited, forum, thread, created, path, path_root) FROM stdin;
@@ -430,21 +484,21 @@ COPY public.posts (id, parent, author, message, isedited, forum, thread, created
 
 
 --
--- Name: posts_author_seq; Type: SEQUENCE SET; Schema: public; Owner: docker
+-- Name: posts_author_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
 SELECT pg_catalog.setval('public.posts_author_seq', 1, false);
 
 
 --
--- Name: posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: docker
+-- Name: posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.posts_id_seq', 145747, true);
+SELECT pg_catalog.setval('public.posts_id_seq', 265719, true);
 
 
 --
--- Data for Name: threads; Type: TABLE DATA; Schema: public; Owner: docker
+-- Data for Name: threads; Type: TABLE DATA; Schema: public; Owner: ruslan_shahaev
 --
 
 COPY public.threads (id, author, message, forum, votes, slug, created, title) FROM stdin;
@@ -452,21 +506,21 @@ COPY public.threads (id, author, message, forum, votes, slug, created, title) FR
 
 
 --
--- Name: threads_author_seq; Type: SEQUENCE SET; Schema: public; Owner: docker
+-- Name: threads_author_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
 SELECT pg_catalog.setval('public.threads_author_seq', 1, false);
 
 
 --
--- Name: threads_id_seq; Type: SEQUENCE SET; Schema: public; Owner: docker
+-- Name: threads_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.threads_id_seq', 40714, true);
+SELECT pg_catalog.setval('public.threads_id_seq', 54958, true);
 
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: docker
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: ruslan_shahaev
 --
 
 COPY public.users (id, nickname, fullname, about, email) FROM stdin;
@@ -474,14 +528,14 @@ COPY public.users (id, nickname, fullname, about, email) FROM stdin;
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: docker
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 103342, true);
+SELECT pg_catalog.setval('public.users_id_seq', 136526, true);
 
 
 --
--- Data for Name: votes; Type: TABLE DATA; Schema: public; Owner: docker
+-- Data for Name: votes; Type: TABLE DATA; Schema: public; Owner: ruslan_shahaev
 --
 
 COPY public.votes (id, user_nickname, voice, thread) FROM stdin;
@@ -489,21 +543,21 @@ COPY public.votes (id, user_nickname, voice, thread) FROM stdin;
 
 
 --
--- Name: votes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: docker
+-- Name: votes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.votes_id_seq', 1120, true);
+SELECT pg_catalog.setval('public.votes_id_seq', 1481, true);
 
 
 --
--- Name: votes_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: docker
+-- Name: votes_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
 SELECT pg_catalog.setval('public.votes_user_id_seq', 1, false);
 
 
 --
--- Name: forums_pkey; Type: CONSTRAINT; Schema: public; Owner: docker
+-- Name: forums_pkey; Type: CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.forums
@@ -511,7 +565,7 @@ ALTER TABLE ONLY public.forums
 
 
 --
--- Name: forums_slug_key; Type: CONSTRAINT; Schema: public; Owner: docker
+-- Name: forums_slug_key; Type: CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.forums
@@ -519,7 +573,7 @@ ALTER TABLE ONLY public.forums
 
 
 --
--- Name: posts_pkey; Type: CONSTRAINT; Schema: public; Owner: docker
+-- Name: posts_pkey; Type: CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.posts
@@ -527,7 +581,7 @@ ALTER TABLE ONLY public.posts
 
 
 --
--- Name: threads_pkey; Type: CONSTRAINT; Schema: public; Owner: docker
+-- Name: threads_pkey; Type: CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.threads
@@ -535,7 +589,7 @@ ALTER TABLE ONLY public.threads
 
 
 --
--- Name: users_email_key; Type: CONSTRAINT; Schema: public; Owner: docker
+-- Name: users_email_key; Type: CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.users
@@ -543,7 +597,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users_nickname_key; Type: CONSTRAINT; Schema: public; Owner: docker
+-- Name: users_nickname_key; Type: CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.users
@@ -551,7 +605,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users_pkey; Type: CONSTRAINT; Schema: public; Owner: docker
+-- Name: users_pkey; Type: CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.users
@@ -559,7 +613,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: votes_pkey; Type: CONSTRAINT; Schema: public; Owner: docker
+-- Name: votes_pkey; Type: CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.votes
@@ -567,7 +621,84 @@ ALTER TABLE ONLY public.votes
 
 
 --
--- Name: forums_user_nickname_fkey; Type: FK CONSTRAINT; Schema: public; Owner: docker
+-- Name: posts_author_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX posts_author_idx ON public.posts USING btree (author);
+
+
+--
+-- Name: posts_forum_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX posts_forum_idx ON public.posts USING btree (forum);
+
+
+--
+-- Name: posts_parent_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX posts_parent_idx ON public.posts USING btree (parent);
+
+
+--
+-- Name: posts_path_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX posts_path_idx ON public.posts USING btree (path);
+
+
+--
+-- Name: posts_path_root_path_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX posts_path_root_path_idx ON public.posts USING btree (path_root, path);
+
+
+--
+-- Name: posts_thread_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX posts_thread_idx ON public.posts USING btree (thread);
+
+
+--
+-- Name: threads_author_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX threads_author_idx ON public.threads USING btree (author);
+
+
+--
+-- Name: threads_forum_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX threads_forum_idx ON public.threads USING btree (forum);
+
+
+--
+-- Name: threads_slug_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX threads_slug_idx ON public.threads USING btree (slug);
+
+
+--
+-- Name: forum_posts_increment; Type: TRIGGER; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE TRIGGER forum_posts_increment AFTER INSERT ON public.posts FOR EACH ROW EXECUTE PROCEDURE public.update_count_posts();
+
+
+--
+-- Name: forum_threads_increment; Type: TRIGGER; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE TRIGGER forum_threads_increment AFTER INSERT ON public.threads FOR EACH ROW EXECUTE PROCEDURE public.update_posts_count();
+
+
+--
+-- Name: forums_user_nickname_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.forums
@@ -575,7 +706,7 @@ ALTER TABLE ONLY public.forums
 
 
 --
--- Name: threads_author_fkey; Type: FK CONSTRAINT; Schema: public; Owner: docker
+-- Name: threads_author_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.threads
@@ -583,7 +714,7 @@ ALTER TABLE ONLY public.threads
 
 
 --
--- Name: threads_forum_fkey; Type: FK CONSTRAINT; Schema: public; Owner: docker
+-- Name: threads_forum_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.threads
@@ -591,7 +722,7 @@ ALTER TABLE ONLY public.threads
 
 
 --
--- Name: votes_thread_fkey; Type: FK CONSTRAINT; Schema: public; Owner: docker
+-- Name: votes_thread_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.votes
@@ -599,7 +730,7 @@ ALTER TABLE ONLY public.votes
 
 
 --
--- Name: votes_user_nickname_fkey; Type: FK CONSTRAINT; Schema: public; Owner: docker
+-- Name: votes_user_nickname_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
 ALTER TABLE ONLY public.votes

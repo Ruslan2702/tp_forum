@@ -2,6 +2,7 @@ package models
 
 import "database/sql"
 
+
 func ServiceStatus(db *sql.DB) (int, int, int, int) {
 	forums := 0
 	threads := 0
@@ -16,11 +17,11 @@ func ServiceStatus(db *sql.DB) (int, int, int, int) {
 	return forums, threads, users, posts
 }
 
+
 func DeleteAll(db *sql.DB) {
 	db.Exec("TRUNCATE TABLE votes CASCADE")
 	db.Exec("TRUNCATE TABLE posts CASCADE")
 	db.Exec("TRUNCATE TABLE threads CASCADE")
 	db.Exec("TRUNCATE TABLE forums CASCADE")
 	db.Exec("TRUNCATE TABLE users CASCADE")
-	
 }

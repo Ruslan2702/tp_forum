@@ -69,14 +69,6 @@ func (env *Env) createThread(w http.ResponseWriter, r *http.Request) {
 
 	thread.Forum = oldForum.Slug
 
-	// oldThread, has := models.GetThreadByTitle(env.db, thread.Title)
-	// if has {
-	// 	outStr, _ := json.Marshal(oldThread)
-	// 	w.WriteHeader(http.StatusConflict)
-	// 	w.Write(outStr)
-	// 	return
-	// }
-
 	if thread.Slug != "" {
 		oldThread, has := models.GetThreadBySlug(env.db, thread.Slug)
 		if has {
