@@ -465,7 +465,7 @@ COPY public.forums (id, title, user_nickname, slug, posts, threads) FROM stdin;
 -- Name: forums_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.forums_id_seq', 37776, true);
+SELECT pg_catalog.setval('public.forums_id_seq', 39128, true);
 
 
 --
@@ -494,7 +494,7 @@ SELECT pg_catalog.setval('public.posts_author_seq', 1, false);
 -- Name: posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.posts_id_seq', 265719, true);
+SELECT pg_catalog.setval('public.posts_id_seq', 282855, true);
 
 
 --
@@ -516,7 +516,7 @@ SELECT pg_catalog.setval('public.threads_author_seq', 1, false);
 -- Name: threads_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.threads_id_seq', 54958, true);
+SELECT pg_catalog.setval('public.threads_id_seq', 56806, true);
 
 
 --
@@ -531,7 +531,7 @@ COPY public.users (id, nickname, fullname, about, email) FROM stdin;
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 136526, true);
+SELECT pg_catalog.setval('public.users_id_seq', 140904, true);
 
 
 --
@@ -546,7 +546,7 @@ COPY public.votes (id, user_nickname, voice, thread) FROM stdin;
 -- Name: votes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.votes_id_seq', 1481, true);
+SELECT pg_catalog.setval('public.votes_id_seq', 1529, true);
 
 
 --
@@ -681,6 +681,13 @@ CREATE INDEX threads_forum_idx ON public.threads USING btree (forum);
 --
 
 CREATE INDEX threads_slug_idx ON public.threads USING btree (slug);
+
+
+--
+-- Name: votes_thread_user_nickname_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX votes_thread_user_nickname_idx ON public.votes USING btree (thread, user_nickname);
 
 
 --
