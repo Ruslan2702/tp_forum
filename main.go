@@ -28,7 +28,6 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/api/user/{nickname}/create", env.createUser).Methods("POST")
 	router.HandleFunc("/api/user/{nickname}/profile", env.profileUser).Methods("GET")
-
 	router.HandleFunc("/api/user/{nickname}/profile", env.updateUser).Methods("POST")
 	router.HandleFunc("/api/forum/create", env.createForum).Methods("POST")
 	router.HandleFunc("/api/forum/{slug}/details", env.detailsForum).Methods("GET")
@@ -44,6 +43,25 @@ func main() {
 	router.HandleFunc("/api/post/{id}/details", env.detailsPost).Methods("GET")
 	router.HandleFunc("/api/post/{id}/details", env.updatePost).Methods("POST")
 	router.HandleFunc("/api/thread/{slug}/posts", env.getPostsList).Methods("GET")
+
+	// router.HandleFunc("/user/{nickname}/create", env.createUser).Methods("POST")
+	// router.HandleFunc("/user/{nickname}/profile", env.profileUser).Methods("GET")
+	// router.HandleFunc("/user/{nickname}/profile", env.updateUser).Methods("POST")
+	// router.HandleFunc("/forum/create", env.createForum).Methods("POST")
+	// router.HandleFunc("/forum/{slug}/details", env.detailsForum).Methods("GET")
+	// router.HandleFunc("/forum/{slug}/create", env.createThread).Methods("POST")
+	// router.HandleFunc("/forum/{slug}/threads", env.getThreadsList).Methods("GET")
+	// router.HandleFunc("/thread/{slug}/create", env.createPost).Methods("POST")
+	// router.HandleFunc("/thread/{slug}/vote", env.createVote).Methods("POST")
+	// router.HandleFunc("/thread/{slug}/details", env.detailsThread).Methods("GET")
+	// router.HandleFunc("/thread/{slug}/details", env.updateThread).Methods("POST")
+	// router.HandleFunc("/forum/{slug}/users", env.getUsersList).Methods("GET")
+	// router.HandleFunc("/service/status", env.serviceStatus).Methods("GET")
+	// router.HandleFunc("/service/clear", env.clearAll).Methods("POST")
+	// router.HandleFunc("/post/{id}/details", env.detailsPost).Methods("GET")
+	// router.HandleFunc("/post/{id}/details", env.updatePost).Methods("POST")
+	// router.HandleFunc("/thread/{slug}/posts", env.getPostsList).Methods("GET")
+
 
 	router.Use(middleware.RespHeadersMiddleware)
 

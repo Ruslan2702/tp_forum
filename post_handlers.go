@@ -18,10 +18,12 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	thread := vars["slug"]
 
-	posts := []*models.Post{}
+	// posts := []*models.Post{}
+	posts := models.Posts{}
 	body, _ := ioutil.ReadAll(r.Body)
 
-	json.Unmarshal(body, &posts)
+	// json.Unmarshal(body, &posts)
+	posts.UnmarshalJSON(body)
 	// posts.UnmarshalJSON(body)
 
 	allPosts := make([]*models.Post, 0)
@@ -55,6 +57,18 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(posts) > 0 {
+		post := posts[0]
+		_, has = models.GetUserByNickname(env.db, post.Author)
+		if !has {
+			msg := map[string]string{"message": "Can't find user by nickname: " + post.Author}
+			outStr, _ := json.Marshal(msg)
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(outStr)
+			return
+		}
+	}
+
 	created := time.Now().Format(time.UnixDate)
 
 	for _, post := range posts {
@@ -65,14 +79,14 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 			post.Created = created
 		}
 
-		_, has = models.GetUserByNickname(env.db, post.Author)
-		if !has {
-			msg := map[string]string{"message": "Can't find user by nickname: " + post.Author}
-			outStr, _ := json.Marshal(msg)
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(outStr)
-			return
-		}
+		// _, has = models.GetUserByNickname(env.db, post.Author)
+		// if !has {
+		// 	msg := map[string]string{"message": "Can't find user by nickname: " + post.Author}
+		// 	outStr, _ := json.Marshal(msg)
+		// 	w.WriteHeader(http.StatusNotFound)
+		// 	w.Write(outStr)
+		// 	return
+		// }
 
 		if post.Parent != 0 {
 			if !models.CheckParentPost(env.db, post.Parent, post.Thread) {
@@ -91,7 +105,9 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	outStr, _ := json.Marshal(allPosts)
+	// (allPosts).(models.Posts)
+	// outStr, _ := json.Marshal(allPosts)
+	outStr, _ := models.Posts(allPosts).MarshalJSON()
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write(outStr)
