@@ -7,16 +7,12 @@ import (
 )
 
 func (env *Env) clearAll(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	models.DeleteAll(env.db)
 
 	w.WriteHeader(http.StatusOK)
 }
 
 func (env *Env) serviceStatus(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	forums, threads, users, posts := models.ServiceStatus(env.db)
 
 	msg := map[string]int{"forum": forums, "thread": threads,

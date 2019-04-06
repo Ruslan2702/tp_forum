@@ -15,8 +15,6 @@ func (env *Env) getThreadsList(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	forum := vars["slug"]
 
-	w.Header().Set("Content-Type", "application/json")
-
 	oldForum, has := models.GetForumBySlug(env.db, forum)
 	if !has {
 		msg := map[string]string{"message": "Can't find forum by slug: " + forum}
@@ -45,8 +43,6 @@ func (env *Env) getThreadsList(w http.ResponseWriter, r *http.Request) {
 func (env *Env) createThread(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	forum := vars["slug"]
-
-	w.Header().Set("Content-Type", "application/json")
 
 	thread := &models.Thread{}
 	body, _ := ioutil.ReadAll(r.Body)
@@ -103,8 +99,6 @@ func (env *Env) updateThread(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	thread := vars["slug"]
 
-	w.Header().Set("Content-Type", "application/json")
-
 	var has bool
 	oldThread := &models.Thread{}
 	var msg map[string]string
@@ -148,8 +142,6 @@ func (env *Env) updateThread(w http.ResponseWriter, r *http.Request) {
 func (env *Env) detailsThread(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	thread := vars["slug"]
-
-	w.Header().Set("Content-Type", "application/json")
 
 	var has bool
 	oldThread := &models.Thread{}

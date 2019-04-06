@@ -13,8 +13,13 @@ type Forum struct {
 }
 
 func CreateForum(db *sql.DB, forum *Forum) bool {
-	_, err := db.Exec("INSERT INTO forums (title, user_nickname, slug, posts, threads) " +
-		"VALUES ($1, $2, $3, $4, $5)", forum.Title, forum.User, forum.Slug, forum.Posts, forum.Threads)
+	query := `
+		INSERT INTO forums (title, user_nickname, slug, posts, threads)
+		VALUES 
+			($1, $2, $3, $4, $5)
+	`
+
+	_, err := db.Exec(query, forum.Title, forum.User, forum.Slug, forum.Posts, forum.Threads)
 	_ = err
 	return true
 }
@@ -22,9 +27,13 @@ func CreateForum(db *sql.DB, forum *Forum) bool {
 func GetForumBySlug(db *sql.DB, slug string) (*Forum, bool) {
 	forum := Forum{}
 
-	err := db.QueryRow("SELECT title, user_nickname, slug, posts, threads " +
-		"FROM forums WHERE forums.slug = $1", slug).Scan(&forum.Title, &forum.User,
-		&forum.Slug, &forum.Posts, &forum.Threads)
+	query := `
+		SELECT title, user_nickname, slug, posts, threads
+		FROM forums
+		WHERE forums.slug = $1
+	`
+
+	err := db.QueryRow(query, slug).Scan(&forum.Title, &forum.User, &forum.Slug, &forum.Posts, &forum.Threads)
 
 	if err != nil {
 		return &forum, false

@@ -1,8 +1,6 @@
 package main
 
 import (
-
-	// _ "database/sql"
 	"database/sql"
 	_ "database/sql"
 	"encoding/json"
@@ -14,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	//"github.com/mailru/easyjson"
+	"forum/middleware"
 )
 
 type Env struct {
@@ -21,8 +20,8 @@ type Env struct {
 }
 
 func main() {
-	// db, err := models.NewDB("postgres://ruslan_shahaev:@localhost:5432/forum?sslmode=disable&connect_timeout=10")
-	db, err := models.NewDB("postgres://docker:docker@localhost/docker")
+	db, err := models.NewDB("postgres://ruslan_shahaev:@localhost:5432/forum?sslmode=disable&connect_timeout=10")
+	// db, err := models.NewDB("postgres://docker:docker@localhost/docker")
 	if err != nil {
 		log.Panic(err)
 	}
@@ -31,24 +30,25 @@ func main() {
 	env := &Env{db: db}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/api/user/{nickname}/create", env.createUser).Methods("POST")
-	router.HandleFunc("/api/user/{nickname}/profile", env.profileUser).Methods("GET")
-	router.HandleFunc("/api/user/{nickname}/profile", env.updateUser).Methods("POST")
-	router.HandleFunc("/api/forum/create", env.createForum).Methods("POST")
-	router.HandleFunc("/api/forum/{slug}/details", env.detailsForum).Methods("GET")
-	router.HandleFunc("/api/forum/{slug}/create", env.createThread).Methods("POST")
-	router.HandleFunc("/api/forum/{slug}/threads", env.getThreadsList).Methods("GET")
-	router.HandleFunc("/api/thread/{slug}/create", env.createPost).Methods("POST")
-	router.HandleFunc("/api/thread/{slug}/vote", env.createVote).Methods("POST")
-	router.HandleFunc("/api/thread/{slug}/details", env.detailsThread).Methods("GET")
-	router.HandleFunc("/api/thread/{slug}/details", env.updateThread).Methods("POST")
-	router.HandleFunc("/api/forum/{slug}/users", env.getUsersList).Methods("GET")
-	router.HandleFunc("/api/service/status", env.serviceStatus).Methods("GET")
-	router.HandleFunc("/api/service/clear", env.clearAll).Methods("POST")
-	router.HandleFunc("/api/post/{id}/details", env.detailsPost).Methods("GET")
-	router.HandleFunc("/api/post/{id}/details", env.updatePost).Methods("POST")
+	router.HandleFunc("/user/{nickname}/create", env.createUser).Methods("POST")
+	router.HandleFunc("/user/{nickname}/profile", env.profileUser).Methods("GET")
+	router.HandleFunc("/user/{nickname}/profile", env.updateUser).Methods("POST")
+	router.HandleFunc("/forum/create", env.createForum).Methods("POST")
+	router.HandleFunc("/forum/{slug}/details", env.detailsForum).Methods("GET")
+	router.HandleFunc("/forum/{slug}/create", env.createThread).Methods("POST")
+	router.HandleFunc("/forum/{slug}/threads", env.getThreadsList).Methods("GET")
+	router.HandleFunc("/thread/{slug}/create", env.createPost).Methods("POST")
+	router.HandleFunc("/thread/{slug}/vote", env.createVote).Methods("POST")
+	router.HandleFunc("/thread/{slug}/details", env.detailsThread).Methods("GET")
+	router.HandleFunc("/thread/{slug}/details", env.updateThread).Methods("POST")
+	router.HandleFunc("/forum/{slug}/users", env.getUsersList).Methods("GET")
+	router.HandleFunc("/service/status", env.serviceStatus).Methods("GET")
+	router.HandleFunc("/service/clear", env.clearAll).Methods("POST")
+	router.HandleFunc("/post/{id}/details", env.detailsPost).Methods("GET")
+	router.HandleFunc("/post/{id}/details", env.updatePost).Methods("POST")
+	router.HandleFunc("/thread/{slug}/posts", env.getPostsList).Methods("GET")
 
-	router.HandleFunc("/api/thread/{slug}/posts", env.getPostsList).Methods("GET")
+	router.Use(middleware.RespHeadersMiddleware)
 
 	http.ListenAndServe(":5000", router)
 }
@@ -57,19 +57,13 @@ func (env *Env) getPostsList(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	thread := vars["slug"]
 
-	w.Header().Set("Content-Type", "application/json")
-
 	var has bool
 	oldThread := &models.Thread{}
 	var msg map[string]string
-	// var commonForum string
 	var ThreadId string
-	// var thrSlug string
 
 	if _, err := strconv.Atoi(thread); err == nil {
 		oldThread, has = models.GetThreadById(env.db, thread)
-		// has = here
-		// commonForum = oldThread.Forum
 		ThreadId = thread
 		msg = map[string]string{"message": "Can't find thread by id: " + thread}
 	} else {

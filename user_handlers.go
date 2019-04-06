@@ -13,8 +13,6 @@ func (env *Env) updateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	nickname := vars["nickname"]
 
-	w.Header().Set("Content-Type", "application/json")
-
 	user := &models.User{}
 	body, _ := ioutil.ReadAll(r.Body)
 	json.Unmarshal(body, &user)
@@ -49,8 +47,6 @@ func (env *Env) profileUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	nickname := vars["nickname"]
 
-	w.Header().Set("Content-Type", "application/json")
-
 	user, has := models.GetUserByNickname(env.db, nickname)
 	if has {
 		outStr, _ := json.Marshal(user)
@@ -74,8 +70,6 @@ func (env *Env) createUser(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(body, &user)
 	user.Nickname = nickname
 
-	w.Header().Set("Content-Type", "application/json")
-
 	users, added := models.CreateUser(env.db, &user)
 
 	var outStr []byte
@@ -93,8 +87,6 @@ func (env *Env) createUser(w http.ResponseWriter, r *http.Request) {
 func (env *Env) getUsersList(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	forum := vars["slug"]
-
-	w.Header().Set("Content-Type", "application/json")
 
 	oldForum, has := models.GetForumBySlug(env.db, forum)
 	if !has {

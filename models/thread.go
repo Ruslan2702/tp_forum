@@ -18,53 +18,13 @@ type Thread struct {
 }
 
 func GetForumThreads(db *sql.DB, forum string, limit string, since string, desc string) ([]*Thread, bool) {
-
 	threads := make([]*Thread, 0)
 
-	// rows, err := db.Query("")
-	// if desc == "true" {
-	// 	desc = "DESC"
-	// } else {
-	// 	desc = ""
-	// }
-
-	// if limit != "" {
-	// 	if since != "" {
-	// 		if desc != "" {
-	// 			rows, err = db.Query("SELECT id, title, author, forum, message, votes, slug, created "+
-	// 				"FROM threads WHERE threads.forum = $1 AND threads.created <= $2 "+
-	// 				"ORDER BY threads.created "+desc+" LIMIT $3", forum, since, limit)
-	// 		} else {
-	// 			rows, err = db.Query("SELECT id, title, author, forum, message, votes, slug, created "+
-	// 				"FROM threads WHERE threads.forum = $1 AND threads.created >= $2 "+
-	// 				"ORDER BY threads.created "+desc+" LIMIT $3", forum, since, limit)
-	// 		}
-
-	// 	} else {
-	// 		rows, err = db.Query("SELECT id, title, author, forum, message, votes, slug, created "+
-	// 			"FROM threads WHERE threads.forum = $1 "+
-	// 			"ORDER BY threads.created "+desc+" LIMIT $2", forum, limit)
-
-	// 	}
-	// } else {
-	// 	if since != "" {
-	// 		if desc != "" {
-	// 			rows, err = db.Query("SELECT id, title, author, forum, message, votes, slug, created "+
-	// 				"FROM threads WHERE threads.forum = $1 AND threads.created <= $2 "+
-	// 				"ORDER BY threads.created "+desc, forum, since)
-	// 		} else {
-	// 			rows, err = db.Query("SELECT id, title, author, forum, message, votes, slug, created "+
-	// 				"FROM threads WHERE threads.forum = $1 AND threads.created >= $2 "+
-	// 				"ORDER BY threads.created "+desc, forum, since)
-	// 		}
-	// 	} else {
-	// 		rows, err = db.Query("SELECT id, title, author, forum, message, votes, slug, created "+
-	// 			"FROM threads WHERE threads.forum = $1 "+
-	// 			"ORDER BY threads.created "+desc, forum)
-	// 	}
-	// }
-
-	query := ` SELECT id, title, author, forum, message, votes, slug, created FROM threads WHERE forum = $1 `
+	query := `
+		SELECT id, title, author, forum, message, votes, slug, created 
+		FROM threads 
+		WHERE forum = $1 
+	`
 
 	eqOp := ""
 	if desc == "true" {
@@ -76,18 +36,20 @@ func GetForumThreads(db *sql.DB, forum string, limit string, since string, desc 
 	if since != "" {
 		query += fmt.Sprintf(" AND created %s '%s' ", eqOp, since)
 	}
-	query += ` ORDER BY created `
+	query += " ORDER BY created "
 
 	if desc == "true" {
-		query += `DESC `
+		query += " DESC "
 	} else {
-		query += `ASC `
+		query += " ASC "
 	}
 
 	if limit != "" {
-		query += fmt.Sprintf(` LIMIT %s `, limit)
+		query += fmt.Sprintf(" LIMIT %s ", limit)
 	}
+
 	rows, err := db.Query(query, forum)
+	defer rows.Close()
 
 	if rows == nil {
 		fmt.Print("Parametrs: ", desc, limit, since)
@@ -114,22 +76,43 @@ func GetForumThreads(db *sql.DB, forum string, limit string, since string, desc 
 
 func CreateThread(db *sql.DB, thread *Thread) error {
 	var err error
-	if thread.Created != "" {
-		_, err = db.Exec("INSERT INTO threads (author, message, forum, slug, created, title)"+
-			" VALUES ($1, $2, $3, $4, $5, $6)", thread.Author, thread.Message, thread.Forum,
-			thread.Slug, thread.Created, thread.Title)
-		fmt.Println(err)
-	} else {
-		_, err = db.Exec("INSERT INTO threads (author, message, forum, slug, title)"+
-			" VALUES ($1, $2, $3, $4, $5)", thread.Author, thread.Message, thread.Forum,
-			thread.Slug, thread.Title)
-		fmt.Println(err)
-	}
 
-	err = db.QueryRow("SELECT id FROM threads WHERE threads.slug = $1", thread.Slug).Scan(&thread.Id)
-	fmt.Println("create_thread_error: ", err)
-	_, err = db.Exec("UPDATE forums SET threads = threads + 1 WHERE slug = $1", thread.Forum)
-	fmt.Println("create thread: ", err)
+	query := `
+		INSERT INTO threads (author, message, forum, slug, title, created)
+		(SELECT $1,
+				$2,
+				$3,
+				$4,
+				$5,
+				CASE WHEN $6 <> ''
+					THEN $6::timestamp
+					ELSE now()
+				END
+		)
+		RETURNING id;
+	`
+
+	err = db.QueryRow(query, thread.Author, thread.Message, thread.Forum, 
+		thread.Slug, thread.Title, thread.Created).Scan(&thread.Id)
+
+	/*
+		USED TRIGGER TO UPDATE FIELD forums.threads
+		JUST FOR FUN
+
+	CREATE TRIGGER forum_threads_increment
+		AFTER INSERT ON threads
+		FOR EACH ROW
+		EXECUTE PROCEDURE update_posts_count();
+
+	CREATE OR REPLACE FUNCTION update_posts_count() RETURNS TRIGGER AS $example_table$
+	BEGIN
+		UPDATE forums
+		SET threads = threads + 1
+		WHERE slug = NEW.forum;
+		RETURN NEW;
+	END;
+	$example_table$ LANGUAGE plpgsql;
+	*/
 
 	return err
 }
@@ -137,8 +120,12 @@ func CreateThread(db *sql.DB, thread *Thread) error {
 func GetThreadByTitle(db *sql.DB, title string) (*Thread, bool) {
 	thread := Thread{}
 
-	err := db.QueryRow("SELECT id, title, author, forum, message, votes, slug, created "+
-		"FROM threads WHERE threads.title = $1", title).Scan(&thread.Id, &thread.Title,
+	query := `
+		SELECT id, title, author, forum, message, votes, slug, created
+		FROM threads
+		WHERE threads.title = $1
+	`
+	err := db.QueryRow(query, title).Scan(&thread.Id, &thread.Title,
 		&thread.Author, &thread.Forum, &thread.Message, &thread.Votes, &thread.Slug, &thread.Created)
 
 	if err != nil {
@@ -151,8 +138,13 @@ func GetThreadByTitle(db *sql.DB, title string) (*Thread, bool) {
 func GetThreadBySlug(db *sql.DB, slug string) (*Thread, bool) {
 	thread := Thread{}
 
-	err := db.QueryRow("SELECT id, title, author, forum, message, votes, slug, created "+
-		"FROM threads WHERE threads.slug = $1", slug).Scan(&thread.Id, &thread.Title,
+	query := `
+		SELECT id, title, author, forum, message, votes, slug, created
+		FROM threads
+		WHERE threads.slug = $1
+	`
+
+	err := db.QueryRow(query, slug).Scan(&thread.Id, &thread.Title,
 		&thread.Author, &thread.Forum, &thread.Message, &thread.Votes, &thread.Slug, &thread.Created)
 
 	if err != nil {
@@ -165,8 +157,13 @@ func GetThreadBySlug(db *sql.DB, slug string) (*Thread, bool) {
 func GetThreadById(db *sql.DB, id string) (*Thread, bool) {
 	thread := Thread{}
 
-	err := db.QueryRow("SELECT id, title, author, forum, message, votes, slug, created "+
-		"FROM threads WHERE threads.id = $1", id).Scan(&thread.Id, &thread.Title,
+	query := `
+		SELECT id, title, author, forum, message, votes, slug, created
+		FROM threads
+		WHERE threads.id = $1
+	`
+
+	err := db.QueryRow(query, id).Scan(&thread.Id, &thread.Title,
 		&thread.Author, &thread.Forum, &thread.Message, &thread.Votes, &thread.Slug, &thread.Created)
 
 	if err != nil {
@@ -177,16 +174,19 @@ func GetThreadById(db *sql.DB, id string) (*Thread, bool) {
 }
 
 func UpdateThread(db *sql.DB, id int64, newThread *Thread, oldThread *Thread) error {
-	if newThread.Title != "" {
-		db.Exec("UPDATE threads SET title = $1 WHERE id = $2", newThread.Title, id)
-	}
+	query := `
+		UPDATE threads 
+		SET title = CASE
+			WHEN $1 <> '' THEN $1 
+			ELSE title END,
 
-	if newThread.Message != "" {
-		db.Exec("UPDATE threads SET message = $1 WHERE id = $2", newThread.Message, id)
-	}
-
-	err := db.QueryRow("SELECT title, message "+
-		"FROM threads WHERE id = $1", id).Scan(&oldThread.Title, &oldThread.Message)
+			message = CASE
+			WHEN $2 <> '' THEN $2
+			ELSE message END
+		WHERE id = $3
+		RETURNING Title, Message
+	`
+	err := db.QueryRow(query, newThread.Title, newThread.Message, id).Scan(&oldThread.Title, &oldThread.Message)
 
 	return err
 }

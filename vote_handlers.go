@@ -14,8 +14,6 @@ func (env *Env) createVote(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	thread := vars["slug"]
 
-	w.Header().Set("Content-Type", "application/json")
-
 	vote := &models.Vote{}
 	body, _ := ioutil.ReadAll(r.Body)
 

@@ -14,8 +14,6 @@ func (env *Env) detailsForum(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	slug := vars["slug"]
 
-	w.Header().Set("Content-Type", "application/json")
-
 	forum, has := models.GetForumBySlug(env.db, slug)
 	if has {
 		outStr, _ := json.Marshal(forum)
@@ -34,8 +32,6 @@ func (env *Env) createForum(w http.ResponseWriter, r *http.Request) {
 	forum := &models.Forum{}
 	body, _ := ioutil.ReadAll(r.Body)
 	json.Unmarshal(body, &forum)
-
-	w.Header().Set("Content-Type", "application/json")
 
 	user, has := models.GetUserByNickname(env.db, forum.User)
 	if !has {
