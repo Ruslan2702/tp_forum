@@ -1,4 +1,4 @@
-FROM golang:1.11-stretch AS build
+FROM golang:1.11.7-stretch AS build
 
 # Копируем исходный код в Docker-контейнер
 RUN ls
