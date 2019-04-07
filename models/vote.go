@@ -47,33 +47,33 @@ func CreateVote(db *sql.DB, vote *Vote) (error, int32) {
 	$example_table$ LANGUAGE plpgsql;
 	*/
 
-	tx, err := db.Begin()
-	if err != nil {
-		log.Println(err)
-		return err, 0
-	}
+	// tx, err := db.Begin()
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return err, 0
+	// }
 
-	_, err = tx.Exec(`DELETE FROM votes
+	_, err := db.Exec(`DELETE FROM votes
 					  WHERE user_nickname = $1 AND thread = $2`, 
 				vote.Nickname, vote.Thread)
 
-	_, err = tx.Exec(`INSERT INTO votes (user_nickname, voice, thread)
+	_, err = db.Exec(`INSERT INTO votes (user_nickname, voice, thread)
 					  VALUES 
 					        ($1, $2, $3)`, 
 				vote.Nickname, vote.Voice, vote.Thread)
 					   
-	err = tx.QueryRow(`SELECT votes
+	err = db.QueryRow(`SELECT votes
 					   FROM threads 
 					   WHERE id = $1`, 
 					   vote.Thread).Scan(&voteSum)
 					   
 	if err != nil {
 		log.Println(err)
-		tx.Rollback()
+		// tx.Rollback()
 		return err, 0
 	}
 	
-	tx.Commit()
+	// tx.Commit()
 	// _, err := db.Exec("DELETE FROM votes WHERE user_nickname = $1 AND thread = $2",
 	// 	vote.Nickname, vote.Thread)
 	// _ = err

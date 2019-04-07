@@ -78,6 +78,24 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 	`
 	// _ = query
 
+	// INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root)
+	// 		(SELECT 
+	// 				nextval('posts_id_seq')::integer,
+	// 				328928,
+	// 				'cadunt.10N28ZDQmcHh7D',
+	// 				'msg',
+	// 				false,
+	// 				'iy0pyI2TIj6iS',
+	// 				62916,
+	// 				(SELECT path FROM posts WHERE id = 328928) || (select currval('posts_id_seq')::integer),
+	// 				now(),
+	// 				CASE WHEN 328928 = 0
+	// 					THEN currval('posts_id_seq')::integer
+	// 					ELSE 
+	// 						(SELECT path_root FROM posts WHERE id = 328928)
+	// 				END
+	// 		)
+	// 	RETURNING id, created;
 	
 	/*
 		USED TRIGGER TO UPDATE FIELD forums.posts
@@ -184,6 +202,12 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 			tx.Rollback()
 			return err
 		}
+
+		tx.Exec(`
+			UPDATE forums
+			SET posts = posts + 1
+			WHERE slug = $1;
+		`, forum)
 
 		post.Thread = threadId
 		post.Forum = forum

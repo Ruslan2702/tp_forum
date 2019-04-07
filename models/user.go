@@ -14,9 +14,6 @@ type User struct {
 	Email    string `json:"email"`
 }
 
-type Users []*User
-
-
 func UpdateUser(db *sql.DB, user *User) error {
 	query := `
 		UPDATE users 
@@ -41,7 +38,6 @@ func UpdateUser(db *sql.DB, user *User) error {
 
 	return err
 }
-
 
 func CreateUser(db *sql.DB, user *User) ([]*User, bool) {
 	users := make([]*User, 0)
@@ -70,7 +66,6 @@ func CreateUser(db *sql.DB, user *User) ([]*User, bool) {
 	}
 }
 
-
 func GetUserByNickname(db *sql.DB, nickname string) (*User, bool) {
 	usr := User{}
 
@@ -88,7 +83,6 @@ func GetUserByNickname(db *sql.DB, nickname string) (*User, bool) {
 
 	return &usr, true
 }
-
 
 func GetUserByEmail(db *sql.DB, email string) (*User, bool) {
 	usr := User{}
@@ -108,7 +102,6 @@ func GetUserByEmail(db *sql.DB, email string) (*User, bool) {
 	return &usr, true
 }
 
-
 func GetForumUsers(db *sql.DB, forum string, limit string, since string, desc string) ([]*User, bool) {
 	users := make([]*User, 0)
 
@@ -120,7 +113,7 @@ func GetForumUsers(db *sql.DB, forum string, limit string, since string, desc st
 		WHERE (threads.forum = $1 OR posts.forum = $1) 
 	`
 
-	// query:= `
+	// query := `
 	// 	SELECT nickname, about, fullname, email
 	// 	FROM users u 
 	// 	WHERE 

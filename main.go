@@ -18,6 +18,7 @@ type Env struct {
 func main() {
 	// db, err := models.NewDB("postgres://ruslan_shahaev:@localhost:5432/forum?sslmode=disable&connect_timeout=10")
 	db, err := models.NewDB("postgres://docker:docker@localhost/docker")
+
 	if err != nil {
 		log.Panic(err)
 	}

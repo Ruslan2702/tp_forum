@@ -69,7 +69,7 @@ func GetForumThreads(db *sql.DB, forum string, limit string, since string, desc 
 		}
 		threads = append(threads, &thread)
 	}
-	err = rows.Close()
+	rows.Close()
 	fmt.Println(err)
 
 	return threads, true
