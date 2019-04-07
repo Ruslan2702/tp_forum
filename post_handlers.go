@@ -26,7 +26,7 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 	posts.UnmarshalJSON(body)
 	// posts.UnmarshalJSON(body)
 
-	allPosts := make([]*models.Post, 0)
+	// allPosts := make([]*models.Post, 0)
 	// allPosts := models.Post{}
 	// savedCreated := ""
 
@@ -34,7 +34,7 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 	var msg map[string]string
 	var commonForum string
 	var ThreadId int64
-	var thrSlug string
+	// var thrSlug string
 	if _, err := strconv.Atoi(thread); err == nil {
 		oldThread, here := models.GetThreadById(env.db, thread)
 		has = here
@@ -44,7 +44,7 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 	} else {
 		oldThread, here := models.GetThreadBySlug(env.db, thread)
 		has = here
-		thrSlug = thread
+		// thrSlug = thread
 		ThreadId = oldThread.Id
 		commonForum = oldThread.Forum
 		msg = map[string]string{"message": "Can't find thread by slug: " + thread}
@@ -71,13 +71,13 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 
 	created := time.Now().Format(time.UnixDate)
 
-	for _, post := range posts {
-		post.Forum = commonForum
-		post.Thread = ThreadId
-		post.ThreadSlug = thrSlug
-		if post.Created == "" {
-			post.Created = created
-		}
+	// for _, post := range posts {
+	// 	post.Forum = commonForum
+	// 	post.Thread = ThreadId
+	// 	post.ThreadSlug = thrSlug
+	// 	if post.Created == "" {
+	// 		post.Created = created
+	// 	}
 
 		// _, has = models.GetUserByNickname(env.db, post.Author)
 		// if !has {
@@ -88,26 +88,33 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 		// 	return
 		// }
 
-		if post.Parent != 0 {
-			if !models.CheckParentPost(env.db, post.Parent, post.Thread) {
-				msg := map[string]string{"message": "Can't find parent post"}
-				outStr, _ := json.Marshal(msg)
-				w.WriteHeader(http.StatusConflict)
-				w.Write(outStr)
-				return
-			}
-		}
+	// 	if post.Parent != 0 {
+	// 		if !models.CheckParentPost(env.db, post.Parent, post.Thread) {
+	// 			msg := map[string]string{"message": "Can't find parent post"}
+	// 			outStr, _ := json.Marshal(msg)
+	// 			w.WriteHeader(http.StatusConflict)
+	// 			w.Write(outStr)
+	// 			return
+	// 		}
+	// 	}
 
-		models.CreatePost(env.db, post)
-
-		if post.Message != "" {
-			allPosts = append(allPosts, post)
-		}
+	err := models.CreatePost(env.db, posts, created, ThreadId, commonForum)
+	if err != nil {
+		msg := map[string]string{"message": "Can't find parent post"}
+		outStr, _ := json.Marshal(msg)
+		w.WriteHeader(http.StatusConflict)
+		w.Write(outStr)
+		return
 	}
+
+	// 	if post.Message != "" {
+	// 		allPosts = append(allPosts, post)
+	// 	}
+	// }
 
 	// (allPosts).(models.Posts)
 	// outStr, _ := json.Marshal(allPosts)
-	outStr, _ := models.Posts(allPosts).MarshalJSON()
+	outStr, _ := models.Posts(posts).MarshalJSON()
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write(outStr)

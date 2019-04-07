@@ -4,6 +4,7 @@ import (
 	"log"
 	"database/sql"
 	"fmt"
+	// "github.com/lib/pq"
 )
 
 type Post struct {
@@ -54,7 +55,7 @@ func GetPostById(db *sql.DB, id string) (*Post, bool) {
 }
 
 
-func CreatePost(db *sql.DB, post *Post) error {
+func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum string) error {
 	query := `
 		INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root)
 			(SELECT 
@@ -75,8 +76,9 @@ func CreatePost(db *sql.DB, post *Post) error {
 			)
 		RETURNING id, created;
 	`
+	// _ = query
 
-
+	
 	/*
 		USED TRIGGER TO UPDATE FIELD forums.posts
 		JUST FOR FUN
@@ -97,8 +99,103 @@ func CreatePost(db *sql.DB, post *Post) error {
 	*/
 
 
-	err := db.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
-		post.Forum, post.Thread, post.Created).Scan(&post.Id, &post.Created)
+	// err := db.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
+	// 	post.Forum, post.Thread, post.Created).Scan(&post.Id, &post.Created)
+	// txn, err := db.Begin()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// stmt, _ := txn.Prepare(pq.CopyIn("posts", "accountid", "subaccountid")) // MessageDetailRecord is the table name
+	// m := &MessageDetailRecord{
+	// 	AccountId:          123456,
+	// 	SubAccountId:       123434,
+	// }
+	// mList := make([]*MessageDetailRecord, 0, 100)
+	// for i:=0 ; i<100 ; i++ {
+	// 	fmt.Println(i)
+	// 	mList = append(mList, m)
+	// }
+	// fmt.Println(m)
+	// for _, user := range mList {
+	// 	_, err := stmt.Exec(int64(user.AccountId), int64(user.SubAccountId))
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// }
+	// _, err = stmt.Exec()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// err = stmt.Close()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// err = txn.Commit()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	if len(posts) == 0 {
+		return nil
+	}
+
+	// valueStrings := make([]string, 0, len(posts))
+	// valueArgs := make([]interface{}, 0, len(posts) * 10)
+	
+	// for _, post := range posts {
+	// 	valueStrings = append(valueStrings, `(nextval('posts_id_seq')::integer,
+	// 										  $_,
+	// 										  $_,
+	// 										  $_,
+	// 										  $_,
+	// 										  $_,
+	// 										  $_,
+	// 										  (SELECT path FROM posts WHERE id = $_) || (select currval('posts_id_seq')::integer),
+	// 										  $_,
+	// 										  CASE WHEN $_ = 0
+	// 											THEN currval('posts_id_seq')::integer
+	// 											ELSE 
+	// 												(SELECT path_root FROM posts WHERE id = $_)
+	// 										  END)`)
+    //     valueArgs = append(valueArgs, post.Parent)
+    //     valueArgs = append(valueArgs, post.Author)
+	// 	valueArgs = append(valueArgs, post.Message)
+	// 	valueArgs = append(valueArgs, post.IsEdited)
+	// 	valueArgs = append(valueArgs, forum)
+	// 	valueArgs = append(valueArgs, threadId)
+	// 	valueArgs = append(valueArgs, post.Parent)
+	// 	valueArgs = append(valueArgs, created)
+	// 	valueArgs = append(valueArgs, post.Parent)
+	// 	valueArgs = append(valueArgs, post.Parent)
+    // }
+	
+	tx, err := db.Begin()
+	for _, post := range posts {
+		if post.Parent != 0 {
+			if !CheckParentPost(db, post.Parent, threadId) {
+				return fmt.Errorf("can't find parent node")
+			}
+		}
+
+		err := tx.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
+				forum, threadId, created).Scan(&post.Id, &post.Created)
+
+		if err != nil {
+			log.Print(err)
+			tx.Rollback()
+			return err
+		}
+
+		post.Thread = threadId
+		post.Forum = forum
+		// post.Created = created
+	}
+	tx.Commit()
+
+	// err := db.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
+	// 	forum, threadId, created).Scan(&post.Id)
+
+	// stmt := fmt.Sprintf("INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root) VALUES %s", strings.Join(valueStrings, ","))
+    // _, err := db.Exec(stmt, valueArgs...)
 
 	if err != nil {
 		log.Print(err)
