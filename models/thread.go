@@ -104,9 +104,9 @@ func CreateThread(db *sql.DB, thread *Thread) error {
 	CREATE TRIGGER forum_threads_increment
 		AFTER INSERT ON threads
 		FOR EACH ROW
-		EXECUTE PROCEDURE update_posts_count();
+		EXECUTE PROCEDURE update_threads_count();
 
-	CREATE OR REPLACE FUNCTION update_posts_count() RETURNS TRIGGER AS $example_table$
+	CREATE OR REPLACE FUNCTION update_threads_count() RETURNS TRIGGER AS $example_table$
 	BEGIN
 		UPDATE forums
 		SET threads = threads + 1

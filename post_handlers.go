@@ -69,7 +69,7 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	created := time.Now().Format(time.UnixDate)
+	created := time.Now().Format(time.RFC3339Nano)
 
 	// for _, post := range posts {
 	// 	post.Forum = commonForum

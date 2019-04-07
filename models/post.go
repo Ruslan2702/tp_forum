@@ -1,6 +1,7 @@
 package models
 
 import (
+	"strings"
 	"log"
 	"database/sql"
 	"fmt"
@@ -76,6 +77,7 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 			)
 		RETURNING id, created;
 	`
+	_ = query
 	// _ = query
 
 	// INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root)
@@ -102,7 +104,7 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 		JUST FOR FUN
 
 	CREATE TRIGGER forum_posts_increment
-		AFTER INSERT ON threads
+		AFTER INSERT ON posts
 		FOR EACH ROW
 		EXECUTE PROCEDURE update_posts_count();
 
@@ -156,8 +158,8 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 		return nil
 	}
 
-	// valueStrings := make([]string, 0, len(posts))
-	// valueArgs := make([]interface{}, 0, len(posts) * 10)
+	valueStrings := make([]string, 0, len(posts))
+	valueArgs := make([]interface{}, 0, len(posts) * 10)
 	
 	// for _, post := range posts {
 	// 	valueStrings = append(valueStrings, `(nextval('posts_id_seq')::integer,
@@ -187,6 +189,10 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
     // }
 	
 	tx, err := db.Begin()
+
+	var startId int64
+	err = tx.QueryRow("SELECT nextval('posts_id_seq')::integer").Scan(&startId)
+
 	for _, post := range posts {
 		if post.Parent != 0 {
 			if !CheckParentPost(db, post.Parent, threadId) {
@@ -194,32 +200,75 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 			}
 		}
 
-		err := tx.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
-				forum, threadId, created).Scan(&post.Id, &post.Created)
+		valueStrings = append(valueStrings, ` (nextval('posts_id_seq')::integer,
+											  %d,
+											  '%s',
+											  '%s',
+											  %t,
+											  '%s',
+											  %d,
+											  (SELECT path FROM posts WHERE id = %d) || (select currval('posts_id_seq')::integer),
+											  '%s',
+											  CASE WHEN %d = 0
+												THEN currval('posts_id_seq')::integer
+												ELSE 
+													(SELECT path_root FROM posts WHERE id = %d)
+											  END) `)
+        valueArgs = append(valueArgs, post.Parent)
+        valueArgs = append(valueArgs, post.Author)
+		valueArgs = append(valueArgs, post.Message)
+		valueArgs = append(valueArgs, post.IsEdited)
+		valueArgs = append(valueArgs, forum)
+		valueArgs = append(valueArgs, threadId)
+		valueArgs = append(valueArgs, post.Parent)
+		valueArgs = append(valueArgs, created)
+		valueArgs = append(valueArgs, post.Parent)
+		valueArgs = append(valueArgs, post.Parent)
 
-		if err != nil {
-			log.Print(err)
-			tx.Rollback()
-			return err
-		}
-
-		tx.Exec(`
-			UPDATE forums
-			SET posts = posts + 1
-			WHERE slug = $1;
-		`, forum)
+		startId += 1
 
 		post.Thread = threadId
 		post.Forum = forum
-		// post.Created = created
-	}
+		post.Created = created
+		post.Id = startId
+    }
+
+	stmt := fmt.Sprintf("INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root) VALUES %s", strings.Join(valueStrings, ","))
+	stmt = fmt.Sprintf(stmt, valueArgs...)
+	_, err = db.Exec(stmt)
+// WORKS
+	// for _, post := range posts {
+	// 	if post.Parent != 0 {
+	// 		if !CheckParentPost(db, post.Parent, threadId) {
+	// 			return fmt.Errorf("can't find parent node")
+	// 		}
+	// 	}
+
+	// 	err := tx.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
+	// 			forum, threadId, created).Scan(&post.Id, &post.Created)
+
+	// 	if err != nil {
+	// 		log.Print(err)
+	// 		tx.Rollback()
+	// 		return err
+	// 	}
+
+	// 	tx.Exec(`
+	// 		UPDATE forums
+	// 		SET posts = posts + 1
+	// 		WHERE slug = $1;
+	// 	`, forum)
+
+	// 	post.Thread = threadId
+	// 	post.Forum = forum
+	// 	// post.Created = created
+	// }
 	tx.Commit()
 
 	// err := db.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
 	// 	forum, threadId, created).Scan(&post.Id)
 
-	// stmt := fmt.Sprintf("INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root) VALUES %s", strings.Join(valueStrings, ","))
-    // _, err := db.Exec(stmt, valueArgs...)
+	
 
 	if err != nil {
 		log.Print(err)
