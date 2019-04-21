@@ -16,18 +16,16 @@ func CreateVote(db *sql.DB, vote *Vote) (error, int32) {
 
 	/*
 		USED TRIGGER TO UPDATE FIELD threads.votes
-		JUST FOR FUN
+					JUST FOR FUN
 
 	CREATE TRIGGER thread_votes_incr
 		AFTER INSERT ON votes
 		FOR EACH ROW
 		EXECUTE PROCEDURE incr_votes_count();
-
 	CREATE TRIGGER thread_votes_decr
 		AFTER DELETE ON votes
 		FOR EACH ROW
 		EXECUTE PROCEDURE decr_votes_count();
-
 	CREATE OR REPLACE FUNCTION incr_votes_count() RETURNS TRIGGER AS $example_table$
 	BEGIN
 		UPDATE threads

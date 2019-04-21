@@ -19,9 +19,10 @@ func ServiceStatus(db *sql.DB) (int, int, int, int) {
 
 
 func DeleteAll(db *sql.DB) {
-	db.Exec("TRUNCATE TABLE votes CASCADE")
-	db.Exec("TRUNCATE TABLE posts CASCADE")
-	db.Exec("TRUNCATE TABLE threads CASCADE")
-	db.Exec("TRUNCATE TABLE forums CASCADE")
-	db.Exec("TRUNCATE TABLE users CASCADE")
+	_, err := db.Exec("TRUNCATE TABLE votes CASCADE")
+	_, err = db.Exec("TRUNCATE TABLE posts CASCADE")
+	_, err = db.Exec("TRUNCATE TABLE threads CASCADE")
+	_, err = db.Exec("TRUNCATE TABLE forums CASCADE")
+	_, err = db.Exec("TRUNCATE TABLE users CASCADE")
+	_ = err
 }

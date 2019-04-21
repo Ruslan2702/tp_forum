@@ -1,7 +1,6 @@
 package models
 
 import (
-	"strings"
 	"log"
 	"database/sql"
 	"fmt"
@@ -57,47 +56,49 @@ func GetPostById(db *sql.DB, id string) (*Post, bool) {
 
 
 func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum string) error {
-	query := `
-		INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root)
-			(SELECT 
-					nextval('posts_id_seq')::integer,
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					(SELECT path FROM posts WHERE id = $1) || (select currval('posts_id_seq')::integer),
-					$7,
-					CASE WHEN $1 = 0
-						THEN currval('posts_id_seq')::integer
-						ELSE 
-							(SELECT path_root FROM posts WHERE id = $1)
-					END
-			)
-		RETURNING id, created;
-	`
-	_ = query
-	// _ = query
-
-	// INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root)
+	// query := `
+	// 	INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root)
 	// 		(SELECT 
 	// 				nextval('posts_id_seq')::integer,
-	// 				328928,
-	// 				'cadunt.10N28ZDQmcHh7D',
-	// 				'msg',
-	// 				false,
-	// 				'iy0pyI2TIj6iS',
-	// 				62916,
-	// 				(SELECT path FROM posts WHERE id = 328928) || (select currval('posts_id_seq')::integer),
-	// 				now(),
-	// 				CASE WHEN 328928 = 0
+	// 				$1,
+	// 				$2,
+	// 				$3,
+	// 				$4,
+	// 				$5,
+	// 				$6,
+	// 				(SELECT path FROM posts WHERE id = $1) || (select currval('posts_id_seq')::integer),
+	// 				$7,
+	// 				CASE WHEN $1 = 0
 	// 					THEN currval('posts_id_seq')::integer
 	// 					ELSE 
-	// 						(SELECT path_root FROM posts WHERE id = 328928)
+	// 						(SELECT path_root FROM posts WHERE id = $1)
 	// 				END
 	// 		)
 	// 	RETURNING id, created;
+	// `
+	// _ = query
+	// query := `
+	// INSERT INTO posts (parent, author, message, isedited, forum, thread, path, created, path_root)
+	// 	(SELECT 
+	// 			$1::bigint,
+	// 			$2,
+	// 			$3,
+	// 			$4,
+	// 			$5,
+	// 			$6,
+	// 			CASE WHEN $1 <> 0
+	// 				THEN (SELECT path FROM posts WHERE id = $1) || $1::integer
+	// 				ELSE ARRAY[]::integer[]
+	// 			END,
+	// 			$7,
+	// 			CASE WHEN $1 <> 0
+	// 				THEN (SELECT path_root FROM posts WHERE id = $1)
+	// 				ELSE 0
+	// 			END
+	// 	)
+	// RETURNING id, created;
+	// `
+	// _ = query
 	
 	/*
 		USED TRIGGER TO UPDATE FIELD forums.posts
@@ -158,8 +159,8 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 		return nil
 	}
 
-	valueStrings := make([]string, 0, len(posts))
-	valueArgs := make([]interface{}, 0, len(posts) * 10)
+	// valueStrings := make([]string, 0, len(posts))
+	// valueArgs := make([]interface{}, 0, len(posts) * 10)
 	
 	// for _, post := range posts {
 	// 	valueStrings = append(valueStrings, `(nextval('posts_id_seq')::integer,
@@ -186,84 +187,133 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 	// 	valueArgs = append(valueArgs, created)
 	// 	valueArgs = append(valueArgs, post.Parent)
 	// 	valueArgs = append(valueArgs, post.Parent)
-    // }
-	
+	// }
 	tx, err := db.Begin()
+	if err != nil {
+		log.Print(err)
+	}
 
-	var startId int64
-	err = tx.QueryRow("SELECT nextval('posts_id_seq')::integer").Scan(&startId)
+	// _, err = tx.Exec(`set transaction isolation level read committed`)
+	// if err != nil {
+	// 	tx.Rollback()
+	// 	return err
+	// }
 
-	for _, post := range posts {
+	stmt, err := tx.Prepare(`
+		INSERT INTO posts (parent, author, message, isedited, forum, thread, path, created) 
+		VALUES 
+				($1::bigint,
+				$2,
+				$3,
+				$4,
+				$5,
+				$6,
+				CASE WHEN $1 <> 0
+					THEN (SELECT path FROM posts WHERE id = $1) || $1::integer
+					ELSE ARRAY[]::integer[]
+				END,
+				$7)
+		RETURNING id`)
+	if err != nil {
+		log.Print(err)
+		tx.Rollback()
+	}
+	defer stmt.Close()
+	
+	var post *Post
+	for _, post = range posts {
 		if post.Parent != 0 {
 			if !CheckParentPost(db, post.Parent, threadId) {
+				tx.Rollback()
 				return fmt.Errorf("can't find parent node")
 			}
 		}
 
-		valueStrings = append(valueStrings, ` (nextval('posts_id_seq')::integer,
-											  %d,
-											  '%s',
-											  '%s',
-											  %t,
-											  '%s',
-											  %d,
-											  (SELECT path FROM posts WHERE id = %d) || (select currval('posts_id_seq')::integer),
-											  '%s',
-											  CASE WHEN %d = 0
-												THEN currval('posts_id_seq')::integer
-												ELSE 
-													(SELECT path_root FROM posts WHERE id = %d)
-											  END) `)
-        valueArgs = append(valueArgs, post.Parent)
-        valueArgs = append(valueArgs, post.Author)
-		valueArgs = append(valueArgs, post.Message)
-		valueArgs = append(valueArgs, post.IsEdited)
-		valueArgs = append(valueArgs, forum)
-		valueArgs = append(valueArgs, threadId)
-		valueArgs = append(valueArgs, post.Parent)
-		valueArgs = append(valueArgs, created)
-		valueArgs = append(valueArgs, post.Parent)
-		valueArgs = append(valueArgs, post.Parent)
+		// valueStrings = append(valueStrings, ` ($1::bigint,
+		// 									   $2,
+		// 									   $3,
+		// 								       $4,
+		// 									   $5,
+		// 									   $6,
+		// 									   CASE WHEN $1 <> 0
+		// 										   THEN (SELECT path FROM posts WHERE id = $1) || $1::integer
+		// 										   ELSE ARRAY[]::integer[]
+		// 									   END,
+		// 									   $7,
+		// 									   CASE WHEN $1 <> 0
+		// 										   THEN (SELECT path_root FROM posts WHERE id = $1)
+		// 										   ELSE 0
+		// 									   END `)
+        // valueArgs = append(valueArgs, post.Parent)
+        // valueArgs = append(valueArgs, post.Author)
+		// valueArgs = append(valueArgs, post.Message)
+		// valueArgs = append(valueArgs, post.IsEdited)
+		// valueArgs = append(valueArgs, forum)
+		// valueArgs = append(valueArgs, threadId)
+		// valueArgs = append(valueArgs, created)
 
-		startId += 1
+		err := stmt.QueryRow(post.Parent, post.Author, post.Message, post.IsEdited,
+			forum, threadId, created).Scan(&post.Id)
+		if err != nil {
+			log.Print(err)
+		}
 
 		post.Thread = threadId
 		post.Forum = forum
 		post.Created = created
-		post.Id = startId
-    }
 
-	stmt := fmt.Sprintf("INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root) VALUES %s", strings.Join(valueStrings, ","))
-	stmt = fmt.Sprintf(stmt, valueArgs...)
-	_, err = db.Exec(stmt)
-// WORKS
-	// for _, post := range posts {
-	// 	if post.Parent != 0 {
-	// 		if !CheckParentPost(db, post.Parent, threadId) {
-	// 			return fmt.Errorf("can't find parent node")
-	// 		}
-	// 	}
 
-	// 	err := tx.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
-	// 			forum, threadId, created).Scan(&post.Id, &post.Created)
+		// err := tx.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
+		// 		forum, threadId, created).Scan(&post.Id, &post.Created)
 
-	// 	if err != nil {
-	// 		log.Print(err)
-	// 		tx.Rollback()
-	// 		return err
-	// 	}
+		// fmt.Println(query[140:170])
+		// if err != nil {
+		// 	log.Print(err)
+		// 	tx.Rollback()
+		// 	return err
+		// }
 
-	// 	tx.Exec(`
-	// 		UPDATE forums
-	// 		SET posts = posts + 1
-	// 		WHERE slug = $1;
-	// 	`, forum)
+		// post.Thread = threadId
+		// post.Forum = forum
+		// post.Created = created
+	}
 
-	// 	post.Thread = threadId
-	// 	post.Forum = forum
-	// 	// post.Created = created
+	
+	// rows, err := stmt.Query(valueArgs...)
+	// stmt := fmt.Sprintf("INSERT INTO posts (parent, author, message, isedited, forum, thread, path, created, path_root) VALUES %s RETURNING id", strings.Join(valueStrings, ","))
+	// stmt = fmt.Sprintf(stmt, valueArgs...)
+	// rows, err := tx.Query(stmt)
+	// _ = rows
+	if err != nil {
+		log.Print(err)
+		tx.Rollback()
+		return err
+	}
+
+	// idx := 0
+	// for rows.Next() {
+	// 	err = rows.Scan(&idx)
+	// 	fmt.Println("INDEX", idx)
 	// }
-	tx.Commit()
+
+
+	queryUpdatePostsCount := `
+		UPDATE forums
+		SET posts = posts + $1
+		WHERE slug = $2
+	`
+	// err = stmt.Close()
+	// if err != nil {
+	// 	log.Print(err)
+	// }
+
+	_, err = tx.Exec(queryUpdatePostsCount, len(posts), post.Forum)
+	if err != nil {
+		log.Print(err)
+	}
+
+
+	err = tx.Commit()
 
 	// err := db.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
 	// 	forum, threadId, created).Scan(&post.Id)
@@ -272,8 +322,11 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 
 	if err != nil {
 		log.Print(err)
+		tx.Rollback()
 		return err
 	}
+
+	
 
 	return nil
 }
@@ -317,6 +370,10 @@ func UpdatePost(db *sql.DB, postId string, newPost Post) string {
 	return newPost.Message
 }
 
+// SELECT id, parent, author, message, isedited, forum, thread, created 
+// FROM posts 
+// WHERE path[1] IN ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 OR path = '{}'
+
 
 func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort string, desc string) ([]*Post, error) {
 	posts := []*Post{}
@@ -336,7 +393,7 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 		}
 
 		if since != "" {
-			query += fmt.Sprintf(` AND path %s (SELECT path FROM posts WHERE id = %s) `, eqOp, since)
+			query += fmt.Sprintf(` AND (path || id::integer) %s (SELECT (path || id::integer) FROM posts WHERE id = %s) `, eqOp, since)
 		}
 
 		sortOrd := ""
@@ -345,7 +402,7 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 			sortOrd = ` DESC `
 		}
 
-		query += fmt.Sprintf(` ORDER BY path %s `, sortOrd)
+		query += fmt.Sprintf(` ORDER BY (path || id::integer) %s `, sortOrd)
 
 		if limit != "" {
 			query += fmt.Sprintf(` LIMIT %s `, limit)
@@ -371,7 +428,7 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 		}
 
 	case "parent_tree":
-		query += ` WHERE path_root IN ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 `
+		query += ` WHERE path[1] IN ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 `
 		eqOp := ""
 		if desc == "true" {
 			eqOp = " < "
@@ -380,7 +437,7 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 		}
 
 		if since != "" {
-			query += fmt.Sprintf(` AND id %s (SELECT path_root FROM posts WHERE id = %s) `, eqOp, since)
+			query += fmt.Sprintf(` AND id %s (SELECT path[1] FROM posts WHERE id = %s) `, eqOp, since)
 		}
 
 		sortOrd := ""
@@ -396,10 +453,25 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 		}
 
 		query += `)`
+
+		query += ` OR path = '{}' AND id IN  ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 `
+		if since != "" {
+			query += fmt.Sprintf(` AND id %s (SELECT path[1] FROM posts WHERE id = %s) `, eqOp, since)
+		}
+		query += fmt.Sprintf(` ORDER BY id %s `, sortOrd)
+		if limit != "" {
+			query += fmt.Sprintf(` LIMIT %s `, limit)
+		}
+		query += `)`
+
+
+
 		if desc == "true" {
-			query += ` ORDER BY path_root DESC, path `
+			query += ` 
+				ORDER BY (path || id::integer)[1] DESC, (path || id::integer)
+			`
 		} else {
-			query += ` ORDER BY path `
+			query += ` ORDER BY (path || id::integer) `
 		}
 
 		rows, err := db.Query(query, threadId)
