@@ -213,7 +213,7 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 					ELSE ARRAY[]::integer[]
 				END,
 				$7)
-		RETURNING id`)
+		RETURNING id, created`)
 	if err != nil {
 		log.Print(err)
 		tx.Rollback()
@@ -253,14 +253,13 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 		// valueArgs = append(valueArgs, created)
 
 		err := stmt.QueryRow(post.Parent, post.Author, post.Message, post.IsEdited,
-			forum, threadId, created).Scan(&post.Id)
+			forum, threadId, created).Scan(&post.Id, &post.Created)
 		if err != nil {
 			log.Print(err)
 		}
 
 		post.Thread = threadId
 		post.Forum = forum
-		post.Created = created
 
 
 		// err := tx.QueryRow(query, post.Parent, post.Author, post.Message, post.IsEdited,
