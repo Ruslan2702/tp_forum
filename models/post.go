@@ -455,7 +455,8 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 
 		query += ` OR path = '{}' AND id IN  ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 `
 		if since != "" {
-			query += fmt.Sprintf(` AND id %s %s `, eqOp, since)
+			// query += fmt.Sprintf(` AND id %s %s `, eqOp, since)
+			query += fmt.Sprintf(` AND id %s (SELECT path[1] FROM posts WHERE id = %s) `, eqOp, since)
 		}
 		query += fmt.Sprintf(` ORDER BY id %s `, sortOrd)
 		if limit != "" {

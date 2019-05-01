@@ -571,7 +571,7 @@ COPY public.forums (id, title, user_nickname, slug, posts, threads) FROM stdin;
 -- Name: forums_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.forums_id_seq', 58628, true);
+SELECT pg_catalog.setval('public.forums_id_seq', 60771, true);
 
 
 --
@@ -607,7 +607,7 @@ SELECT pg_catalog.setval('public.posts_author_seq', 3, true);
 -- Name: posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.posts_id_seq', 1452834, true);
+SELECT pg_catalog.setval('public.posts_id_seq', 4487289, true);
 
 
 --
@@ -652,7 +652,7 @@ SELECT pg_catalog.setval('public.threads_author_seq', 1, false);
 -- Name: threads_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.threads_id_seq', 236464, true);
+SELECT pg_catalog.setval('public.threads_id_seq', 259210, true);
 
 
 --
@@ -667,7 +667,7 @@ COPY public.users (id, nickname, fullname, about, email) FROM stdin;
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 226443, true);
+SELECT pg_catalog.setval('public.users_id_seq', 234535, true);
 
 
 --
@@ -682,7 +682,7 @@ COPY public.votes (id, user_nickname, voice, thread) FROM stdin;
 -- Name: votes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.votes_id_seq', 1425355, true);
+SELECT pg_catalog.setval('public.votes_id_seq', 1625450, true);
 
 
 --
@@ -762,6 +762,13 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: posts_expr_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX posts_expr_idx ON public.posts USING btree (((path || (id)::integer)));
 
 
 --
@@ -877,8 +884,6 @@ GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
-
-SET synchronous_commit TO OFF;
 --
 -- PostgreSQL database dump complete
 --
