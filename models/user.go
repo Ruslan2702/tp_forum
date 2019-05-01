@@ -105,22 +105,22 @@ func GetUserByEmail(db *sql.DB, email string) (*User, bool) {
 func GetForumUsers(db *sql.DB, forum string, limit string, since string, desc string) ([]*User, bool) {
 	users := make([]*User, 0)
 
-	query := `
-		SELECT DISTINCT users.nickname, users.about, users.fullname, users.email 
-		FROM users 
-		LEFT JOIN posts ON (users.nickname=posts.author) 
-		LEFT JOIN threads ON (users.nickname=threads.author) 
-		WHERE (threads.forum = $1 OR posts.forum = $1) 
-	`
-
 	// query := `
-	// 	SELECT nickname, about, fullname, email
-	// 	FROM users u 
-	// 	WHERE 
-	// 		EXISTS (SELECT id FROM posts p WHERE p.author = u.nickname AND p.forum = $1) 
-	// 		OR 
-	// 		EXISTS (SELECT id FROM threads t WHERE t.author = u.nickname AND t.forum = $1)
+	// 	SELECT DISTINCT users.nickname, users.about, users.fullname, users.email 
+	// 	FROM users 
+	// 	LEFT JOIN posts ON (users.nickname=posts.author) 
+	// 	LEFT JOIN threads ON (users.nickname=threads.author) 
+	// 	WHERE (threads.forum = $1 OR posts.forum = $1) 
 	// `
+
+	query := `
+		SELECT nickname, about, fullname, email
+		FROM users u 
+		WHERE 
+			(EXISTS (SELECT id FROM posts p WHERE p.author = u.nickname AND p.forum = $1) 
+			OR 
+			EXISTS (SELECT id FROM threads t WHERE t.author = u.nickname AND t.forum = $1))
+	`
 
 
 	eqOp := ""
