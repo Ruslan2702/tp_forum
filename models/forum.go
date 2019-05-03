@@ -1,8 +1,8 @@
 package models
 
 import (
-	// "database/sql"
-	"github.com/jackc/pgx"
+	"database/sql"
+	// "github.com/jackc/pgx"
 )
 
 type Forum struct {
@@ -14,7 +14,7 @@ type Forum struct {
 }
 
 
-func CreateForum(db *pgx.ConnPool, forum *Forum) bool {
+func CreateForum(db *sql.DB, forum *Forum) bool {
 	query := `
 		INSERT INTO forums (title, user_nickname, slug, posts, threads)
 		VALUES 
@@ -27,7 +27,7 @@ func CreateForum(db *pgx.ConnPool, forum *Forum) bool {
 }
 
 
-func GetForumBySlug(db *pgx.ConnPool, slug string) (*Forum, bool) {
+func GetForumBySlug(db *sql.DB, slug string) (*Forum, bool) {
 	forum := Forum{}
 
 	query := `

@@ -2,11 +2,11 @@ package models
 
 import (
 	"time"
-	"github.com/jackc/pgx"
+	// "github.com/jackc/pgx"
 	"log"
-	// "database/sql"
+	"database/sql"
 	"fmt"
-	// "github.com/lib/pq"
+	// _ "github.com/lib/pq"
 )
 
 type Post struct {
@@ -37,7 +37,7 @@ type PostOnly struct {
 type Posts []*Post
 
 
-func GetPostById(db *pgx.ConnPool, id string) (*Post, bool) {
+func GetPostById(db *sql.DB, id string) (*Post, bool) {
 	post := Post{}
 
 	query := `
@@ -57,7 +57,7 @@ func GetPostById(db *pgx.ConnPool, id string) (*Post, bool) {
 }
 
 
-func CreatePost(db *pgx.ConnPool, posts []*Post, created string, threadId int64, forum string) error {
+func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum string) error {
 	// query := `
 	// 	INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root)
 	// 		(SELECT 
@@ -201,7 +201,7 @@ func CreatePost(db *pgx.ConnPool, posts []*Post, created string, threadId int64,
 	// 	return err
 	// }
 
-	_, err = tx.Prepare("bulk_create", `
+	stmt, err := tx.Prepare(`
 		INSERT INTO posts (parent, author, message, isedited, forum, thread, path, created, path_root) 
 		VALUES 
 				($1::bigint,
@@ -256,7 +256,7 @@ func CreatePost(db *pgx.ConnPool, posts []*Post, created string, threadId int64,
 		// valueArgs = append(valueArgs, threadId)
 		// valueArgs = append(valueArgs, created)
 		// stmt.
-		err := tx.QueryRow("bulk_create", post.Parent, post.Author, post.Message, post.IsEdited,
+		err := stmt.QueryRow(post.Parent, post.Author, post.Message, post.IsEdited,
 			forum, threadId, created).Scan(&post.Id, &post.Created)
 		if err != nil {
 			log.Print(err)
@@ -275,6 +275,9 @@ func CreatePost(db *pgx.ConnPool, posts []*Post, created string, threadId int64,
 		// 	tx.Rollback()
 		// 	return err
 		// }
+		if post.Id == 1500000 {
+			stmt.Exec("VACUUM ANALYZE")
+		}
 
 		// post.Thread = threadId
 		// post.Forum = forum
@@ -335,7 +338,7 @@ func CreatePost(db *pgx.ConnPool, posts []*Post, created string, threadId int64,
 }
 
 
-func CheckParentPost(db *pgx.ConnPool, parent int64, thread int64) bool {
+func CheckParentPost(db *sql.DB, parent int64, thread int64) bool {
 	parentId := 0
 
 	query := `
@@ -354,7 +357,7 @@ func CheckParentPost(db *pgx.ConnPool, parent int64, thread int64) bool {
 }
 
 
-func UpdatePost(db *pgx.ConnPool, postId string, newPost Post) string {
+func UpdatePost(db *sql.DB, postId string, newPost Post) string {
 	query := `
 	UPDATE posts 
 	SET message = CASE
@@ -378,7 +381,7 @@ func UpdatePost(db *pgx.ConnPool, postId string, newPost Post) string {
 // WHERE path[1] IN ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 OR path = '{}'
 
 
-func GetPostsList(db *pgx.ConnPool, threadId string, limit string, since string, sort string, desc string) ([]*Post, error) {
+func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort string, desc string) ([]*Post, error) {
 	posts := []*Post{}
 	query := `
 		SELECT id, parent, author, message, isedited, forum, thread, created 
@@ -522,10 +525,6 @@ func GetPostsList(db *pgx.ConnPool, threadId string, limit string, since string,
 			post := Post{}
 			err = rows.Scan(&post.Id, &post.Parent, &post.Author, &post.Message,
 				&post.IsEdited, &post.Forum, &post.Thread, &post.Created)
-
-			if err != nil {
-				log.Println("parent_tree", err)
-			}
 
 			posts = append(posts, &post)
 		}

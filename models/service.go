@@ -1,13 +1,13 @@
 package models
 
 import (
-	"github.com/jackc/pgx"
+	// "github.com/jackc/pgx"
 )
 
-// import "database/sql"
+import "database/sql"
 
 
-func ServiceStatus(db *pgx.ConnPool) (int, int, int, int) {
+func ServiceStatus(db *sql.DB) (int, int, int, int) {
 	forums := 0
 	threads := 0
 	users := 0
@@ -22,7 +22,7 @@ func ServiceStatus(db *pgx.ConnPool) (int, int, int, int) {
 }
 
 
-func DeleteAll(db *pgx.ConnPool) {
+func DeleteAll(db *sql.DB) {
 	_, err := db.Exec("TRUNCATE TABLE votes CASCADE")
 	_, err = db.Exec("TRUNCATE TABLE posts CASCADE")
 	_, err = db.Exec("TRUNCATE TABLE threads CASCADE")
