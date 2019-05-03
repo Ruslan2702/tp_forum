@@ -3,11 +3,9 @@ package main
 import (
 	"time"
 	"encoding/json"
-	"fmt"
 	"forum/models"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 
@@ -235,8 +233,6 @@ func (env *Env) detailsPost(w http.ResponseWriter, r *http.Request) {
 	postId := vars["id"]
 
 	related := r.FormValue("related")
-	fmt.Println(related)
-	fmt.Println(reflect.TypeOf(related))
 
 	flagUser := false
 	flagForum := false

@@ -147,11 +147,11 @@ func GetForumUsers(db *sql.DB, forum string, limit string, since string, desc st
 
 	rows, err := db.Query(query, forum)
 	defer rows.Close()
-	fmt.Println("get users: ", err)
+	// fmt.Println("get users: ", err)
 
-	if rows == nil {
-		fmt.Print("Parametrs: ", desc, limit, since)
-	}
+	// if rows == nil {
+	// 	fmt.Print("Parametrs: ", desc, limit, since)
+	// }
 
 	for rows.Next() {
 		user := User{}
@@ -162,7 +162,7 @@ func GetForumUsers(db *sql.DB, forum string, limit string, since string, desc st
 		users = append(users, &user)
 	}
 	err = rows.Close()
-	fmt.Println(err)
+	// fmt.Println(err)
 
 	return users, true
 }

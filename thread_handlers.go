@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"forum/models"
 	"io/ioutil"
 	"net/http"
@@ -81,8 +80,8 @@ func (env *Env) createThread(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err := models.CreateThread(env.db, thread)
-	fmt.Println(err)
+	_ = models.CreateThread(env.db, thread)
+	// fmt.Println(err)
 
 	w.WriteHeader(http.StatusCreated)
 	// outStr, _ := json.Marshal(thread)

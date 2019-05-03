@@ -52,13 +52,13 @@ func GetForumThreads(db *sql.DB, forum string, limit string, since string, desc 
 	rows, err := db.Query(query, forum)
 	defer rows.Close()
 
-	if rows == nil {
-		fmt.Print("Parametrs: ", desc, limit, since)
-	}
+	// if rows == nil {
+	// 	fmt.Print("Parametrs: ", desc, limit, since)
+	// }
 
-	if err != nil {
-		fmt.Println(err)
-	}
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 
 	for rows.Next() {
 		thread := Thread{}
@@ -70,7 +70,7 @@ func GetForumThreads(db *sql.DB, forum string, limit string, since string, desc 
 		threads = append(threads, &thread)
 	}
 	rows.Close()
-	fmt.Println(err)
+	// fmt.Println(err)
 
 	return threads, true
 }

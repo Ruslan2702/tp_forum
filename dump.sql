@@ -572,7 +572,7 @@ COPY public.forums (id, title, user_nickname, slug, posts, threads) FROM stdin;
 -- Name: forums_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.forums_id_seq', 61426, true);
+SELECT pg_catalog.setval('public.forums_id_seq', 61658, true);
 
 
 --
@@ -608,7 +608,7 @@ SELECT pg_catalog.setval('public.posts_author_seq', 3, true);
 -- Name: posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.posts_id_seq', 7496024, true);
+SELECT pg_catalog.setval('public.posts_id_seq', 8998880, true);
 
 
 --
@@ -653,7 +653,7 @@ SELECT pg_catalog.setval('public.threads_author_seq', 1, false);
 -- Name: threads_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.threads_id_seq', 280041, true);
+SELECT pg_catalog.setval('public.threads_id_seq', 300291, true);
 
 
 --
@@ -668,7 +668,7 @@ COPY public.users (id, nickname, fullname, about, email) FROM stdin;
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 238384, true);
+SELECT pg_catalog.setval('public.users_id_seq', 240938, true);
 
 
 --
@@ -683,7 +683,7 @@ COPY public.votes (id, user_nickname, voice, thread) FROM stdin;
 -- Name: votes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.votes_id_seq', 1825479, true);
+SELECT pg_catalog.setval('public.votes_id_seq', 1935703, true);
 
 
 --
@@ -766,17 +766,17 @@ ALTER TABLE ONLY public.votes
 
 
 --
--- Name: posts_forum_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+-- Name: posts_author_forum_id_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
 --
 
-CREATE INDEX posts_forum_idx ON public.posts USING btree (forum);
+CREATE INDEX posts_author_forum_id_idx ON public.posts USING btree (author, forum, id);
 
 
 --
--- Name: posts_id_thread_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+-- Name: posts_thread_parent_id_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
 --
 
-CREATE INDEX posts_id_thread_idx ON public.posts USING btree (id, thread);
+CREATE INDEX posts_thread_parent_id_idx ON public.posts USING btree (thread, parent, id);
 
 
 --

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log"
 	"database/sql"
 )
 
@@ -47,7 +46,7 @@ func CreateVote(db *sql.DB, vote *Vote) (error, int32) {
 
 	tx, err := db.Begin()
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
 		return err, 0
 	}
 
@@ -66,7 +65,7 @@ func CreateVote(db *sql.DB, vote *Vote) (error, int32) {
 					   vote.Thread).Scan(&voteSum)
 					   
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
 		tx.Rollback()
 		return err, 0
 	}
