@@ -264,7 +264,8 @@ CREATE TABLE public.posts (
     forum character varying(100),
     thread bigint,
     created timestamp with time zone DEFAULT now(),
-    path integer[]
+    path integer[],
+    path_root integer
 );
 
 
@@ -571,7 +572,7 @@ COPY public.forums (id, title, user_nickname, slug, posts, threads) FROM stdin;
 -- Name: forums_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.forums_id_seq', 60771, true);
+SELECT pg_catalog.setval('public.forums_id_seq', 61426, true);
 
 
 --
@@ -592,7 +593,7 @@ SELECT pg_catalog.setval('public.my_serial_name', 4, true);
 -- Data for Name: posts; Type: TABLE DATA; Schema: public; Owner: ruslan_shahaev
 --
 
-COPY public.posts (id, parent, author, message, isedited, forum, thread, created, path) FROM stdin;
+COPY public.posts (id, parent, author, message, isedited, forum, thread, created, path, path_root) FROM stdin;
 \.
 
 
@@ -607,7 +608,7 @@ SELECT pg_catalog.setval('public.posts_author_seq', 3, true);
 -- Name: posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.posts_id_seq', 4487289, true);
+SELECT pg_catalog.setval('public.posts_id_seq', 7496024, true);
 
 
 --
@@ -652,7 +653,7 @@ SELECT pg_catalog.setval('public.threads_author_seq', 1, false);
 -- Name: threads_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.threads_id_seq', 259210, true);
+SELECT pg_catalog.setval('public.threads_id_seq', 280041, true);
 
 
 --
@@ -667,7 +668,7 @@ COPY public.users (id, nickname, fullname, about, email) FROM stdin;
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 234535, true);
+SELECT pg_catalog.setval('public.users_id_seq', 238384, true);
 
 
 --
@@ -682,7 +683,7 @@ COPY public.votes (id, user_nickname, voice, thread) FROM stdin;
 -- Name: votes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.votes_id_seq', 1625450, true);
+SELECT pg_catalog.setval('public.votes_id_seq', 1825479, true);
 
 
 --
@@ -765,24 +766,10 @@ ALTER TABLE ONLY public.votes
 
 
 --
--- Name: posts_expr_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
---
-
-CREATE INDEX posts_expr_idx ON public.posts USING btree (((path || (id)::integer)));
-
-
---
 -- Name: posts_forum_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
 --
 
 CREATE INDEX posts_forum_idx ON public.posts USING btree (forum);
-
-
---
--- Name: posts_id_path_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
---
-
-CREATE INDEX posts_id_path_idx ON public.posts USING btree (id, path);
 
 
 --

@@ -200,7 +200,7 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 	// }
 
 	stmt, err := tx.Prepare(`
-		INSERT INTO posts (parent, author, message, isedited, forum, thread, path, created) 
+		INSERT INTO posts (parent, author, message, isedited, forum, thread, path, created, path_root) 
 		VALUES 
 				($1::bigint,
 				$2,
@@ -212,7 +212,12 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 					THEN (SELECT path FROM posts WHERE id = $1) || $1::integer
 					ELSE ARRAY[]::integer[]
 				END,
-				$7)
+				$7,
+				CASE WHEN $1 = 0
+					THEN currval('posts_id_seq')::integer
+					ELSE 
+						(SELECT path_root FROM posts WHERE id = $1)
+				END)
 		RETURNING id, created`)
 	if err != nil {
 		log.Print(err)
@@ -427,7 +432,55 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 		}
 
 	case "parent_tree":
-		query += ` WHERE path[1] IN ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 `
+		// query += ` WHERE path[1] IN ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 `
+		// eqOp := ""
+		// if desc == "true" {
+		// 	eqOp = " < "
+		// } else {
+		// 	eqOp = " > "
+		// }
+
+		// if since != "" {
+		// 	query += fmt.Sprintf(` AND id %s (SELECT path[1] FROM posts WHERE id = %s) `, eqOp, since)
+		// }
+
+		// sortOrd := ""
+		// sortOrd = ` ASC `
+		// if desc == "true" {
+		// 	sortOrd = ` DESC `
+		// }
+
+		// query += fmt.Sprintf(` ORDER BY id %s `, sortOrd)
+
+		// if limit != "" {
+		// 	query += fmt.Sprintf(` LIMIT %s `, limit)
+		// }
+
+		// query += `)`
+
+		// query += ` OR path = '{}' AND id IN  ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 `
+		// if since != "" {
+		// 	// query += fmt.Sprintf(` AND id %s %s `, eqOp, since)
+		// 	query += fmt.Sprintf(` AND id %s (SELECT (path || id::integer)[1] FROM posts WHERE id = %s) `, eqOp, since)
+		// }
+		// query += fmt.Sprintf(` ORDER BY id %s `, sortOrd)
+		// if limit != "" {
+		// 	query += fmt.Sprintf(` LIMIT %s `, limit)
+		// }
+		// query += `)`
+
+
+
+		// if desc == "true" {
+		// 	query += ` 
+		// 		ORDER BY (path || id::integer)[1] DESC, (path || id::integer)
+		// 	`
+		// } else {
+		// 	query += ` ORDER BY (path || id::integer) `
+		// }
+
+		//
+		query += ` WHERE path_root IN ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 `
 		eqOp := ""
 		if desc == "true" {
 			eqOp = " < "
@@ -436,7 +489,7 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 		}
 
 		if since != "" {
-			query += fmt.Sprintf(` AND id %s (SELECT path[1] FROM posts WHERE id = %s) `, eqOp, since)
+			query += fmt.Sprintf(` AND id %s (SELECT path_root FROM posts WHERE id = %s) `, eqOp, since)
 		}
 
 		sortOrd := ""
@@ -452,27 +505,12 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 		}
 
 		query += `)`
-
-		query += ` OR path = '{}' AND id IN  ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 `
-		if since != "" {
-			// query += fmt.Sprintf(` AND id %s %s `, eqOp, since)
-			query += fmt.Sprintf(` AND id %s (SELECT path[1] FROM posts WHERE id = %s) `, eqOp, since)
-		}
-		query += fmt.Sprintf(` ORDER BY id %s `, sortOrd)
-		if limit != "" {
-			query += fmt.Sprintf(` LIMIT %s `, limit)
-		}
-		query += `)`
-
-
-
 		if desc == "true" {
-			query += ` 
-				ORDER BY (path || id::integer)[1] DESC, (path || id::integer)
-			`
+			query += ` ORDER BY path_root DESC, (path || id::integer) `
 		} else {
 			query += ` ORDER BY (path || id::integer) `
 		}
+		//
 
 		rows, err := db.Query(query, threadId)
 		if err != nil {
