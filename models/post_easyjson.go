@@ -339,7 +339,9 @@ func easyjson5a72dc82DecodeForumModels3(in *jlexer.Lexer, out *Post) {
 		case "thread":
 			out.Thread = int64(in.Int64())
 		case "created":
-			out.Created = string(in.String())
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Created).UnmarshalJSON(data))
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -424,7 +426,7 @@ func easyjson5a72dc82EncodeForumModels3(out *jwriter.Writer, in Post) {
 		}
 		out.Int64(int64(in.Thread))
 	}
-	if in.Created != "" {
+	if true {
 		const prefix string = ",\"created\":"
 		if first {
 			first = false
@@ -432,7 +434,7 @@ func easyjson5a72dc82EncodeForumModels3(out *jwriter.Writer, in Post) {
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Created))
+		out.Raw((in.Created).MarshalJSON())
 	}
 	out.RawByte('}')
 }

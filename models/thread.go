@@ -1,7 +1,9 @@
 package models
 
 import (
-	"database/sql"
+	"time"
+	"github.com/jackc/pgx"
+	// "database/sql"
 	"fmt"
 	"log"
 )
@@ -14,11 +16,11 @@ type Thread struct {
 	Message string `json:"message,omitempty"`
 	Votes   int32  `json:"votes,omitempty"`
 	Slug    string `json:"slug,omitempty"`
-	Created string `json:"created,omitempty"`
+	Created time.Time `json:"created,omitempty"`
 }
 
 
-func GetForumThreads(db *sql.DB, forum string, limit string, since string, desc string) ([]*Thread, bool) {
+func GetForumThreads(db *pgx.ConnPool, forum string, limit string, since string, desc string) ([]*Thread, bool) {
 	threads := make([]*Thread, 0)
 
 	query := `
@@ -76,7 +78,7 @@ func GetForumThreads(db *sql.DB, forum string, limit string, since string, desc 
 }
 
 
-func CreateThread(db *sql.DB, thread *Thread) error {
+func CreateThread(db *pgx.ConnPool, thread *Thread) error {
 	var err error
 
 	query := `
@@ -86,7 +88,7 @@ func CreateThread(db *sql.DB, thread *Thread) error {
 				$3,
 				$4,
 				$5,
-				CASE WHEN $6 <> ''
+				CASE WHEN $6::timestamp IS NOT NULL
 					THEN $6::timestamp
 					ELSE now()
 				END
@@ -120,7 +122,7 @@ func CreateThread(db *sql.DB, thread *Thread) error {
 }
 
 
-func GetThreadBySlug(db *sql.DB, slug string) (*Thread, bool) {
+func GetThreadBySlug(db *pgx.ConnPool, slug string) (*Thread, bool) {
 	thread := Thread{}
 
 	query := `
@@ -140,7 +142,7 @@ func GetThreadBySlug(db *sql.DB, slug string) (*Thread, bool) {
 }
 
 
-func GetThreadById(db *sql.DB, id string) (*Thread, bool) {
+func GetThreadById(db *pgx.ConnPool, id string) (*Thread, bool) {
 	thread := Thread{}
 
 	query := `
@@ -160,7 +162,7 @@ func GetThreadById(db *sql.DB, id string) (*Thread, bool) {
 }
 
 
-func UpdateThread(db *sql.DB, id int64, newThread *Thread, oldThread *Thread) error {
+func UpdateThread(db *pgx.ConnPool, id int64, newThread *Thread, oldThread *Thread) error {
 	query := `
 		UPDATE threads 
 		SET title = CASE

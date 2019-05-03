@@ -1,7 +1,10 @@
 package models
 
 import (
-	"database/sql"
+	"time"
+	"github.com/jackc/pgx"
+	"log"
+	// "database/sql"
 	"fmt"
 	// "github.com/lib/pq"
 )
@@ -14,7 +17,7 @@ type Post struct {
 	IsEdited bool   `json:"isEdited,omitempty"`
 	Forum    string `json:"forum,omitempty"`
 	Thread   int64  `json:"thread,omitempty"`
-	Created  string `json:"created,omitempty"`
+	Created  time.Time `json:"created,omitempty"`
 
 	ThreadSlug string `json:"-"`
 }
@@ -34,7 +37,7 @@ type PostOnly struct {
 type Posts []*Post
 
 
-func GetPostById(db *sql.DB, id string) (*Post, bool) {
+func GetPostById(db *pgx.ConnPool, id string) (*Post, bool) {
 	post := Post{}
 
 	query := `
@@ -54,7 +57,7 @@ func GetPostById(db *sql.DB, id string) (*Post, bool) {
 }
 
 
-func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum string) error {
+func CreatePost(db *pgx.ConnPool, posts []*Post, created string, threadId int64, forum string) error {
 	// query := `
 	// 	INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root)
 	// 		(SELECT 
@@ -198,7 +201,7 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 	// 	return err
 	// }
 
-	stmt, err := tx.Prepare(`
+	_, err = tx.Prepare("bulk_create", `
 		INSERT INTO posts (parent, author, message, isedited, forum, thread, path, created, path_root) 
 		VALUES 
 				($1::bigint,
@@ -219,7 +222,7 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 		// log.Print(err)
 		tx.Rollback()
 	}
-	defer stmt.Close()
+	// defer stmt.Close()
 	
 	var post *Post
 	for _, post = range posts {
@@ -252,12 +255,12 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 		// valueArgs = append(valueArgs, forum)
 		// valueArgs = append(valueArgs, threadId)
 		// valueArgs = append(valueArgs, created)
-
-		_ = stmt.QueryRow(post.Parent, post.Author, post.Message, post.IsEdited,
+		// stmt.
+		err := tx.QueryRow("bulk_create", post.Parent, post.Author, post.Message, post.IsEdited,
 			forum, threadId, created).Scan(&post.Id, &post.Created)
-		// if err != nil {
-		// 	log.Print(err)
-		// }
+		if err != nil {
+			log.Print(err)
+		}
 
 		post.Thread = threadId
 		post.Forum = forum
@@ -285,7 +288,7 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 	// rows, err := tx.Query(stmt)
 	// _ = rows
 	if err != nil {
-		// log.Print(err)
+		log.Print(err)
 		tx.Rollback()
 		return err
 	}
@@ -308,9 +311,9 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 	// }
 
 	_, err = tx.Exec(queryUpdatePostsCount, len(posts), post.Forum)
-	// if err != nil {
-	// 	log.Print(err)
-	// }
+	if err != nil {
+		log.Print(err)
+	}
 
 
 	err = tx.Commit()
@@ -321,7 +324,7 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 	
 
 	if err != nil {
-		// log.Print(err)
+		log.Print(err)
 		tx.Rollback()
 		return err
 	}
@@ -332,7 +335,7 @@ func CreatePost(db *sql.DB, posts []*Post, created string, threadId int64, forum
 }
 
 
-func CheckParentPost(db *sql.DB, parent int64, thread int64) bool {
+func CheckParentPost(db *pgx.ConnPool, parent int64, thread int64) bool {
 	parentId := 0
 
 	query := `
@@ -351,7 +354,7 @@ func CheckParentPost(db *sql.DB, parent int64, thread int64) bool {
 }
 
 
-func UpdatePost(db *sql.DB, postId string, newPost Post) string {
+func UpdatePost(db *pgx.ConnPool, postId string, newPost Post) string {
 	query := `
 	UPDATE posts 
 	SET message = CASE
@@ -375,7 +378,7 @@ func UpdatePost(db *sql.DB, postId string, newPost Post) string {
 // WHERE path[1] IN ( SELECT id FROM posts WHERE thread = $1 AND parent = 0 OR path = '{}'
 
 
-func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort string, desc string) ([]*Post, error) {
+func GetPostsList(db *pgx.ConnPool, threadId string, limit string, since string, sort string, desc string) ([]*Post, error) {
 	posts := []*Post{}
 	query := `
 		SELECT id, parent, author, message, isedited, forum, thread, created 
@@ -520,13 +523,13 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 			err = rows.Scan(&post.Id, &post.Parent, &post.Author, &post.Message,
 				&post.IsEdited, &post.Forum, &post.Thread, &post.Created)
 
-			// if err != nil {
-			// 	log.Println("parent_tree", err)
-			// }
+			if err != nil {
+				log.Println("parent_tree", err)
+			}
 
 			posts = append(posts, &post)
 		}
-
+		
 	default:
 		query += ` WHERE thread = $1 `
 		eqOp := ""
@@ -553,7 +556,7 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 
 		rows, err := db.Query(query, threadId)
 		if err != nil {
-			// log.Println("parent_tree", err)
+			log.Println("parent_tree", err)
 			return nil, err
 		}
 		defer rows.Close()
@@ -563,9 +566,9 @@ func GetPostsList(db *sql.DB, threadId string, limit string, since string, sort 
 			err = rows.Scan(&post.Id, &post.Parent, &post.Author, &post.Message,
 				&post.IsEdited, &post.Forum, &post.Thread, &post.Created)
 
-			// if err != nil {
-			// 	log.Println("parent_tree", err)
-			// }
+			if err != nil {
+				log.Println("parent_tree", err)
+			}
 
 			posts = append(posts, &post)
 		}

@@ -3,22 +3,24 @@ package main
 import (
 	"encoding/json"
 	"forum/models"
-	"io/ioutil"
-	"net/http"
+	// "net/http"
 	"strconv"
+	"github.com/valyala/fasthttp"
 
-	"github.com/gorilla/mux"
+	// "github.com/gorilla/mux"
 )
 
-func (env *Env) createVote(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	thread := vars["slug"]
+func (env *Env) createVote(ctx *fasthttp.RequestCtx) {
+	// vars := mux.Vars(r)
+	// thread := vars["slug"]
+
+	thread := ctx.UserValue("slug").(string)
 
 	vote := &models.Vote{}
-	body, _ := ioutil.ReadAll(r.Body)
+	// body, _ := ioutil.ReadAll(r.Body)
 
 	// json.Unmarshal(body, vote)
-	vote.UnmarshalJSON(body)
+	vote.UnmarshalJSON(ctx.PostBody())
 
 	has := false
 	oldThread := &models.Thread{}
@@ -31,8 +33,10 @@ func (env *Env) createVote(w http.ResponseWriter, r *http.Request) {
 	if !has {
 		msg := map[string]string{"message": "Can't find thread"}
 		outStr, _ := json.Marshal(msg)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(outStr)
+		// w.WriteHeader(http.StatusNotFound)
+		// w.Write(outStr)
+		ctx.SetStatusCode(fasthttp.StatusNotFound)
+		ctx.Write(outStr)
 		return
 	}
 
@@ -40,8 +44,10 @@ func (env *Env) createVote(w http.ResponseWriter, r *http.Request) {
 	if !has {
 		msg := map[string]string{"message": "Can't find user by nickname: " + vote.Nickname}
 		outStr, _ := json.Marshal(msg)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(outStr)
+		// w.WriteHeader(http.StatusNotFound)
+		// w.Write(outStr)
+		ctx.SetStatusCode(fasthttp.StatusNotFound)
+		ctx.Write(outStr)
 		return
 	}
 
@@ -53,6 +59,8 @@ func (env *Env) createVote(w http.ResponseWriter, r *http.Request) {
 	// outStr, _ := json.Marshal(oldThread)
 	outStr, _ := oldThread.MarshalJSON()
 
-	w.WriteHeader(http.StatusOK)
-	w.Write(outStr)
+	// w.WriteHeader(http.StatusOK)
+	// w.Write(outStr)
+	ctx.SetStatusCode(fasthttp.StatusOK)
+	ctx.Write(outStr)
 }

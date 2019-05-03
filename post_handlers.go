@@ -1,27 +1,30 @@
 package main
 
 import (
+	"github.com/valyala/fasthttp"
 	"time"
 	"encoding/json"
 	"forum/models"
-	"io/ioutil"
-	"net/http"
+	// "io/ioutil"
+	// "net/http"
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/mux"
+	// "github.com/gorilla/mux"
 )
 
-func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	thread := vars["slug"]
+func (env *Env) createPost(ctx *fasthttp.RequestCtx) {
+	// vars := mux.Vars(r)
+	// thread := vars["slug"]
+
+	thread := ctx.UserValue("slug").(string)
 
 	// posts := []*models.Post{}
 	posts := models.Posts{}
-	body, _ := ioutil.ReadAll(r.Body)
+	// body, _ := ioutil.ReadAll(r.Body)
 
 	// json.Unmarshal(body, &posts)
-	posts.UnmarshalJSON(body)
+	posts.UnmarshalJSON(ctx.PostBody())
 	// posts.UnmarshalJSON(body)
 
 	// allPosts := make([]*models.Post, 0)
@@ -50,8 +53,10 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 
 	if !has {
 		outStr, _ := json.Marshal(msg)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(outStr)
+		// w.WriteHeader(http.StatusNotFound)
+		// w.Write(outStr)
+		ctx.SetStatusCode(fasthttp.StatusNotFound)
+		ctx.Write(outStr)
 		return
 	}
 
@@ -61,8 +66,10 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 		if !has {
 			msg := map[string]string{"message": "Can't find user by nickname: " + post.Author}
 			outStr, _ := json.Marshal(msg)
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(outStr)
+			// w.WriteHeader(http.StatusNotFound)
+			// w.Write(outStr)
+			ctx.SetStatusCode(fasthttp.StatusNotFound)
+			ctx.Write(outStr)
 			return
 		}
 	}
@@ -100,8 +107,10 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := map[string]string{"message": "Can't find parent post"}
 		outStr, _ := json.Marshal(msg)
-		w.WriteHeader(http.StatusConflict)
-		w.Write(outStr)
+		// w.WriteHeader(http.StatusConflict)
+		// w.Write(outStr)
+		ctx.SetStatusCode(fasthttp.StatusConflict)
+		ctx.Write(outStr)
 		return
 	}
 
@@ -114,11 +123,14 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 	// outStr, _ := json.Marshal(allPosts)
 	outStr, _ := models.Posts(posts).MarshalJSON()
 
-	w.WriteHeader(http.StatusCreated)
-	w.Write(outStr)
+	// w.WriteHeader(http.StatusCreated)
+	// w.Write(outStr)
+
+	ctx.SetStatusCode(fasthttp.StatusCreated)
+	ctx.Write(outStr)
 }
 
-// func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
+// func (env *Env) createPost(ctx *fasthttp.RequestCtx) {
 // 	vars := mux.Vars(r)
 // 	thread := vars["slug"]
 
@@ -194,9 +206,11 @@ func (env *Env) createPost(w http.ResponseWriter, r *http.Request) {
 // }
 
 
-func (env *Env) updatePost(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	postId := vars["id"]
+func (env *Env) updatePost(ctx *fasthttp.RequestCtx) {
+	// vars := mux.Vars(r)
+	// postId := vars["id"]
+
+	postId := ctx.UserValue("id").(string)
 
 	var has bool
 
@@ -205,15 +219,17 @@ func (env *Env) updatePost(w http.ResponseWriter, r *http.Request) {
 	if !has {
 		msg := map[string]string{"message": "Can't find post by id: " + postId}
 		outStr, _ := json.Marshal(msg)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(outStr)
+		// w.WriteHeader(http.StatusNotFound)
+		// w.Write(outStr)
+		ctx.SetStatusCode(fasthttp.StatusNotFound)
+		ctx.Write(outStr)
 		return
 	}
 
 	post := &models.Post{}
-	body, _ := ioutil.ReadAll(r.Body)
+	// body, _ := ioutil.ReadAll(r.Body)
 	// json.Unmarshal(body, &post)
-	post.UnmarshalJSON(body)
+	post.UnmarshalJSON(ctx.PostBody())
 
 	if post.Message != "" {
 		if post.Message != oldPost.Message {
@@ -224,15 +240,22 @@ func (env *Env) updatePost(w http.ResponseWriter, r *http.Request) {
 
 	// outStr, _ := json.Marshal(oldPost)
 	outStr, _ := oldPost.MarshalJSON()
-	w.WriteHeader(http.StatusOK)
-	w.Write(outStr)
+	// w.WriteHeader(http.StatusOK)
+	// w.Write(outStr)
+	ctx.SetStatusCode(fasthttp.StatusOK)
+	ctx.Write(outStr)
 }
 
-func (env *Env) detailsPost(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	postId := vars["id"]
+func (env *Env) detailsPost(ctx *fasthttp.RequestCtx) {
+	// vars := mux.Vars(r)
+	// postId := vars["id"]
 
-	related := r.FormValue("related")
+	postId := ctx.UserValue("id").(string)
+
+
+	// related := r.FormValue("related")
+	related := string(ctx.FormValue("related"))
+
 
 	flagUser := false
 	flagForum := false
@@ -278,21 +301,27 @@ func (env *Env) detailsPost(w http.ResponseWriter, r *http.Request) {
 
 		// outStr, _ := json.Marshal(postDetail)
 		outStr, _ := postDetail.MarshalJSON()
-		w.WriteHeader(http.StatusOK)
-		w.Write(outStr)
+		// w.WriteHeader(http.StatusOK)
+		// w.Write(outStr)
+		ctx.SetStatusCode(fasthttp.StatusOK)
+		ctx.Write(outStr)
 		return
 	}
 
 	msg := map[string]string{"message": "Can't find post by id: " + postId}
 	outStr, _ := json.Marshal(msg)
-	w.WriteHeader(http.StatusNotFound)
-	w.Write(outStr)
+	// w.WriteHeader(http.StatusNotFound)
+	// w.Write(outStr)
+	ctx.SetStatusCode(fasthttp.StatusNotFound)
+	ctx.Write(outStr)
 }
 
 
-func (env *Env) getPostsList(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	thread := vars["slug"]
+func (env *Env) getPostsList(ctx *fasthttp.RequestCtx) {
+	// vars := mux.Vars(r)
+	// thread := vars["slug"]
+
+	thread := ctx.UserValue("slug").(string)
 
 	var has bool
 	oldThread := &models.Thread{}
@@ -311,19 +340,28 @@ func (env *Env) getPostsList(w http.ResponseWriter, r *http.Request) {
 
 	if !has {
 		outStr, _ := json.Marshal(msg)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(outStr)
+		// w.WriteHeader(http.StatusNotFound)
+		// w.Write(outStr)
+		ctx.SetStatusCode(fasthttp.StatusNotFound)
+		ctx.Write(outStr)
 		return
 	}
 
-	limit := r.FormValue("limit")
-	since := r.FormValue("since")
-	sort := r.FormValue("sort")
-	desc := r.FormValue("desc")
+	// limit := r.FormValue("limit")
+	// since := r.FormValue("since")
+	// sort := r.FormValue("sort")
+	// desc := r.FormValue("desc")
+
+	limit := string(ctx.FormValue("limit"))
+	since := string(ctx.FormValue("since"))
+	sort := string(ctx.FormValue("sort"))
+	desc := string(ctx.FormValue("desc"))
 
 	posts, _ := models.GetPostsList(env.db, ThreadId, limit, since, sort, desc)
 
 	outStr, _ := json.Marshal(posts)
-	w.WriteHeader(http.StatusOK)
-	w.Write(outStr)
+	// w.WriteHeader(http.StatusOK)
+	// w.Write(outStr)
+	ctx.SetStatusCode(fasthttp.StatusOK)
+	ctx.Write(outStr)
 }

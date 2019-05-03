@@ -51,7 +51,9 @@ func easyjson2d00218DecodeForumModels(in *jlexer.Lexer, out *Thread) {
 		case "slug":
 			out.Slug = string(in.String())
 		case "created":
-			out.Created = string(in.String())
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Created).UnmarshalJSON(data))
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -136,7 +138,7 @@ func easyjson2d00218EncodeForumModels(out *jwriter.Writer, in Thread) {
 		}
 		out.String(string(in.Slug))
 	}
-	if in.Created != "" {
+	if true {
 		const prefix string = ",\"created\":"
 		if first {
 			first = false
@@ -144,7 +146,7 @@ func easyjson2d00218EncodeForumModels(out *jwriter.Writer, in Thread) {
 		} else {
 			out.RawString(prefix)
 		}
-		out.String(string(in.Created))
+		out.Raw((in.Created).MarshalJSON())
 	}
 	out.RawByte('}')
 }
