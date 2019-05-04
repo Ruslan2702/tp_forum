@@ -1,8 +1,8 @@
 package models
 
 import (
-	// "github.com/jackc/pgx"
-	"database/sql"
+	"github.com/jackc/pgx"
+	// "database/sql"
 )
 
 type Vote struct {
@@ -12,7 +12,7 @@ type Vote struct {
 }
 
 
-func CreateVote(db *sql.DB, vote *Vote) (error, int32) {
+func CreateVote(db *pgx.ConnPool , vote *Vote) (error, int32) {
 	var voteSum int32
 
 	/*

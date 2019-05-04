@@ -6,7 +6,7 @@ ADD . /go/src/forum
 WORKDIR /go/src/forum
 
 # Собираем и устанавливаем пакет
-RUN go get "github.com/lib/pq" && go get "github.com/buaazp/fasthttprouter" && go get "github.com/valyala/fasthttp" && go get "github.com/mailru/easyjson/..."
+RUN go get "github.com/jackc/pgx" && go get "github.com/buaazp/fasthttprouter" && go get "github.com/valyala/fasthttp" && go get "github.com/mailru/easyjson/..."
 RUN go build 
 
 FROM ubuntu:18.04 AS release

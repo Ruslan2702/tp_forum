@@ -1,8 +1,8 @@
 package models
 
 import (
-	// "github.com/jackc/pgx"
-	"database/sql"
+	"github.com/jackc/pgx"
+	// "database/sql"
 	_ "encoding/json"
 	"fmt"
 	"log"
@@ -15,7 +15,7 @@ type User struct {
 	Email    string `json:"email"`
 }
 
-func UpdateUser(db *sql.DB, user *User) error {
+func UpdateUser(db *pgx.ConnPool , user *User) error {
 	query := `
 		UPDATE users 
 		SET fullname = CASE
@@ -40,7 +40,7 @@ func UpdateUser(db *sql.DB, user *User) error {
 	return err
 }
 
-func CreateUser(db *sql.DB, user *User) ([]*User, bool) {
+func CreateUser(db *pgx.ConnPool , user *User) ([]*User, bool) {
 	users := make([]*User, 0)
 	usr, got := GetUserByNickname(db, user.Nickname)
 	if got {
@@ -67,7 +67,7 @@ func CreateUser(db *sql.DB, user *User) ([]*User, bool) {
 	}
 }
 
-func GetUserByNickname(db *sql.DB, nickname string) (*User, bool) {
+func GetUserByNickname(db *pgx.ConnPool , nickname string) (*User, bool) {
 	usr := User{}
 
 	query := `
@@ -85,7 +85,7 @@ func GetUserByNickname(db *sql.DB, nickname string) (*User, bool) {
 	return &usr, true
 }
 
-func GetUserByEmail(db *sql.DB, email string) (*User, bool) {
+func GetUserByEmail(db *pgx.ConnPool , email string) (*User, bool) {
 	usr := User{}
 
 	query := `
@@ -103,7 +103,7 @@ func GetUserByEmail(db *sql.DB, email string) (*User, bool) {
 	return &usr, true
 }
 
-func GetForumUsers(db *sql.DB, forum string, limit string, since string, desc string) ([]*User, bool) {
+func GetForumUsers(db *pgx.ConnPool , forum string, limit string, since string, desc string) ([]*User, bool) {
 	users := make([]*User, 0)
 
 	// query := `

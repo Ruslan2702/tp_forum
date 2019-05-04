@@ -2,15 +2,14 @@ package main
 
 import (
 	// "fmt"
-	"database/sql"
-	"forum/models"
-	"log"
+	// "database/sql"
+	// "forum/models"
 	// // "net/http"
 	// // "github.com/gorilla/mux"
-	_ "github.com/lib/pq"
+	// _ "github.com/lib/pq"
 	"forum/middleware"
 
-	// "github.com/jackc/pgx"
+	"github.com/jackc/pgx"
 
 	"github.com/buaazp/fasthttprouter"
 	"github.com/valyala/fasthttp"
@@ -18,23 +17,22 @@ import (
 
 
 type Env struct {
-	db *sql.DB
 	// db *sql.DB
+	db *pgx.ConnPool 
 }
 
 func main() {
 	// db, err := models.NewDB("postgres://ruslan_shahaev:@localhost:5432/forum?sslmode=disable&connect_timeout=10")
-	db, err := models.NewDB("postgres://docker:docker@localhost/docker")
+	// db, err := models.NewDB("postgres://docker:docker@localhost/docker")
 	// conn := Connect("connect test")
 	// defer conn.Close()
-	if err != nil {
-		log.Panic(err)
-	}
+	// if err != nil {
+	// 	log.Panic(err)
+	// }
 	// defer db.Close()
 
-	env := &Env{db: db}
-
-	// pool, _ := pgx.NewConnPool(sql.DBConfig{
+	// env := &Env{db: db}
+	// pool, _ := pgx.NewConnPool(pgx.ConnPoolConfig{
 	// 	ConnConfig: pgx.ConnConfig{
 	// 		Host:     "localhost",
 	// 		Port:     5432,
@@ -44,19 +42,19 @@ func main() {
 	// 	},
 	// 	MaxConnections: 30,
 	// })
-	// pool, _ := pgx.NewConnPool(sql.DBConfig{
-	// 	ConnConfig: pgx.ConnConfig{
-	// 		Host:     "localhost",
-	// 		Port:     5432,
-	// 		User:     "docker",
-	// 		Password: "docker",
-	// 		Database: "docker",
-	// 	},
-	// 	MaxConnections: 30,
-	// })
+	pool, _ := pgx.NewConnPool(pgx.ConnPoolConfig{
+		ConnConfig: pgx.ConnConfig{
+			Host:     "localhost",
+			Port:     5432,
+			User:     "docker",
+			Password: "docker",
+			Database: "docker",
+		},
+		MaxConnections: 50,
+	})
 
-	// env := &Env{db: pool}
-	// defer pool.Close()
+	env := &Env{db: pool}
+	defer pool.Close()
 
 	var router = fasthttprouter.New()
 
