@@ -608,7 +608,7 @@ SELECT pg_catalog.setval('public.posts_author_seq', 3, true);
 -- Name: posts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ruslan_shahaev
 --
 
-SELECT pg_catalog.setval('public.posts_id_seq', 8998880, true);
+SELECT pg_catalog.setval('public.posts_id_seq', 1, true);
 
 
 --
