@@ -62,7 +62,7 @@ func (env *Env) createThread(ctx *fasthttp.RequestCtx) {
 	thread.UnmarshalJSON(ctx.PostBody())
 	thread.Forum = forum
 
-	_, has := models.GetUserByNickname(env.db, thread.Author)
+	user, has := models.GetUserByNickname(env.db, thread.Author)
 	if !has {
 		msg := map[string]string{"message": "Can't find user by nickname: " + thread.Author}
 		outStr, _ := json.Marshal(msg)
@@ -100,6 +100,7 @@ func (env *Env) createThread(ctx *fasthttp.RequestCtx) {
 	}
 
 	_ = models.CreateThread(env.db, thread)
+	models.AttachUserToForum(env.db, thread.Forum, user)
 	// fmt.Println(err)
 
 	// w.WriteHeader(http.StatusCreated)

@@ -57,7 +57,7 @@ func GetPostById(db *pgx.ConnPool , id string) (*Post, bool) {
 }
 
 
-func CreatePost(db *pgx.ConnPool , posts []*Post, created string, threadId int64, forum string) error {
+func CreatePost(db *pgx.ConnPool , posts []*Post, created string, threadId int64, forum string, user *User) error {
 	// query := `
 	// 	INSERT INTO posts (id, parent, author, message, isedited, forum, thread, path, created, path_root)
 	// 		(SELECT 
@@ -282,6 +282,8 @@ func CreatePost(db *pgx.ConnPool , posts []*Post, created string, threadId int64
 		// post.Thread = threadId
 		// post.Forum = forum
 		// post.Created = created
+
+		AttachUserToForum(db, post.Forum, user)
 	}
 
 	

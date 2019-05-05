@@ -114,13 +114,20 @@ func GetForumUsers(db *pgx.ConnPool , forum string, limit string, since string, 
 	// 	WHERE (threads.forum = $1 OR posts.forum = $1) 
 	// `
 
+	// query := `
+	// 	SELECT nickname, about, fullname, email
+	// 	FROM users u 
+	// 	WHERE 
+	// 		(EXISTS (SELECT id FROM posts p WHERE p.author = u.nickname AND p.forum = $1) 
+	// 		OR 
+	// 		EXISTS (SELECT id FROM threads t WHERE t.author = u.nickname AND t.forum = $1))
+	// `
+
 	query := `
 		SELECT nickname, about, fullname, email
-		FROM users u 
+		FROM forum_users
 		WHERE 
-			(EXISTS (SELECT id FROM posts p WHERE p.author = u.nickname AND p.forum = $1) 
-			OR 
-			EXISTS (SELECT id FROM threads t WHERE t.author = u.nickname AND t.forum = $1))
+			forum_slug = $1
 	`
 
 

@@ -180,6 +180,22 @@ CREATE SEQUENCE public.for_posts
 ALTER TABLE public.for_posts OWNER TO ruslan_shahaev;
 
 --
+-- Name: forum_users; Type: TABLE; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE UNLOGGED TABLE public.forum_users (
+    id bigint,
+    nickname public.citext,
+    fullname character varying(100),
+    about text,
+    email public.citext,
+    forum_slug public.citext
+);
+
+
+ALTER TABLE public.forum_users OWNER TO ruslan_shahaev;
+
+--
 -- Name: forums; Type: TABLE; Schema: public; Owner: ruslan_shahaev
 --
 
@@ -561,6 +577,14 @@ SELECT pg_catalog.setval('public.for_posts', 13, true);
 
 
 --
+-- Data for Name: forum_users; Type: TABLE DATA; Schema: public; Owner: ruslan_shahaev
+--
+
+COPY public.forum_users (id, nickname, fullname, about, email, forum_slug) FROM stdin;
+\.
+
+
+--
 -- Data for Name: forums; Type: TABLE DATA; Schema: public; Owner: ruslan_shahaev
 --
 
@@ -694,6 +718,14 @@ SELECT pg_catalog.setval('public.votes_user_id_seq', 1, false);
 
 
 --
+-- Name: forum_users_nickname_forum_slug_key; Type: CONSTRAINT; Schema: public; Owner: ruslan_shahaev
+--
+
+ALTER TABLE ONLY public.forum_users
+    ADD CONSTRAINT forum_users_nickname_forum_slug_key UNIQUE (nickname, forum_slug);
+
+
+--
 -- Name: forums_pkey; Type: CONSTRAINT; Schema: public; Owner: ruslan_shahaev
 --
 
@@ -763,6 +795,13 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.votes
     ADD CONSTRAINT votes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: forum_users_forum_slug_idx; Type: INDEX; Schema: public; Owner: ruslan_shahaev
+--
+
+CREATE INDEX forum_users_forum_slug_idx ON public.forum_users USING btree (forum_slug);
 
 
 --

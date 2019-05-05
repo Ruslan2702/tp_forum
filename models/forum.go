@@ -26,6 +26,17 @@ func CreateForum(db *pgx.ConnPool , forum *Forum) bool {
 	return true
 }
 
+func AttachUserToForum(db *pgx.ConnPool , slug string, user *User) bool {
+	query := `
+		INSERT INTO forum_users (nickname, fullname, about, email, forum_slug) 
+		VALUES 
+			($1, $2, $3, $4, $5)
+	`
+
+	_, err := db.Exec(query, user.Nickname, user.Fullname, user.About, user.Email, slug)
+	_ = err
+	return true
+}
 
 func GetForumBySlug(db *pgx.ConnPool , slug string) (*Forum, bool) {
 	forum := Forum{}

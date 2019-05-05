@@ -60,9 +60,10 @@ func (env *Env) createPost(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
+	user := &models.User{}
 	if len(posts) > 0 {
 		post := posts[0]
-		_, has = models.GetUserByNickname(env.db, post.Author)
+		user, has = models.GetUserByNickname(env.db, post.Author)
 		if !has {
 			msg := map[string]string{"message": "Can't find user by nickname: " + post.Author}
 			outStr, _ := json.Marshal(msg)
@@ -117,7 +118,7 @@ func (env *Env) createPost(ctx *fasthttp.RequestCtx) {
 	// 		}
 	// 	}
 
-	err := models.CreatePost(env.db, posts, created, ThreadId, commonForum)
+	err := models.CreatePost(env.db, posts, created, ThreadId, commonForum, user)
 	if err != nil {
 		msg := map[string]string{"message": "Can't find parent post"}
 		outStr, _ := json.Marshal(msg)

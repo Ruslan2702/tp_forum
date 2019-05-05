@@ -71,6 +71,7 @@ func (env *Env) createForum(ctx *fasthttp.RequestCtx) {
 	}
 
 	models.CreateForum(env.db, forum)
+	// models.AttachUserToForum(env.db, forum.Slug, user)
 	// outStr, _ := json.Marshal(forum)
 	outStr, _ := forum.MarshalJSON()
 	// w.WriteHeader(http.StatusCreated)

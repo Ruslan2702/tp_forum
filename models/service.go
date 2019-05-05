@@ -23,7 +23,7 @@ func ServiceStatus(db *pgx.ConnPool ) (int, int, int, int) {
 
 
 func DeleteAll(db *pgx.ConnPool ) {
-	_, err := db.Exec("TRUNCATE votes, posts, threads, forums, users RESTART IDENTITY CASCADE")
+	_, err := db.Exec("TRUNCATE votes, posts, threads, forums, users, forum_users RESTART IDENTITY CASCADE")
 	// _, err := db.Exec("TRUNCATE TABLE votes CASCADE")
 	// _, err = db.Exec("TRUNCATE TABLE posts CASCADE")
 	// _, err = db.Exec("TRUNCATE TABLE threads CASCADE")
