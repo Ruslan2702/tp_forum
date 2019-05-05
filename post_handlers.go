@@ -72,6 +72,20 @@ func (env *Env) createPost(ctx *fasthttp.RequestCtx) {
 			ctx.Write(outStr)
 			return
 		}
+		
+		if post.Parent != 0 {
+			if !models.CheckParentPost(env.db, post.Parent, ThreadId) {
+				// tx.Rollback()
+				// return fmt.Errorf("can't find parent node")
+				msg := map[string]string{"message": "Can't find parent post"}
+				outStr, _ := json.Marshal(msg)
+				// w.WriteHeader(http.StatusConflict)
+				// w.Write(outStr)
+				ctx.SetStatusCode(fasthttp.StatusConflict)
+				ctx.Write(outStr)
+				return
+			}
+		}
 	}
 
 	created := time.Now().Format(time.RFC3339Nano)

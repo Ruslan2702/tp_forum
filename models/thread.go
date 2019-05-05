@@ -81,6 +81,20 @@ func GetForumThreads(db *pgx.ConnPool , forum string, limit string, since string
 func CreateThread(db *pgx.ConnPool , thread *Thread) error {
 	var err error
 
+	// query := `
+	// 	INSERT INTO threads (author, message, forum, slug, title, created)
+	// 	(SELECT $1,
+	// 			$2,
+	// 			$3,
+	// 			$4,
+	// 			$5,
+	// 			CASE WHEN $6::timestamp IS NOT NULL
+	// 				THEN $6::timestamp
+	// 				ELSE now()
+	// 			END
+	// 	)
+	// 	RETURNING id;
+	// `
 	query := `
 		INSERT INTO threads (author, message, forum, slug, title, created)
 		(SELECT $1,
@@ -88,10 +102,7 @@ func CreateThread(db *pgx.ConnPool , thread *Thread) error {
 				$3,
 				$4,
 				$5,
-				CASE WHEN $6::timestamp IS NOT NULL
-					THEN $6::timestamp
-					ELSE now()
-				END
+				$6
 		)
 		RETURNING id;
 	`

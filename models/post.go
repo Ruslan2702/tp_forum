@@ -226,12 +226,12 @@ func CreatePost(db *pgx.ConnPool , posts []*Post, created string, threadId int64
 	
 	var post *Post
 	for _, post = range posts {
-		if post.Parent != 0 {
-			if !CheckParentPost(db, post.Parent, threadId) {
-				tx.Rollback()
-				return fmt.Errorf("can't find parent node")
-			}
-		}
+		// if post.Parent != 0 {
+		// 	if !CheckParentPost(db, post.Parent, threadId) {
+		// 		tx.Rollback()
+		// 		return fmt.Errorf("can't find parent node")
+		// 	}
+		// }
 
 		// valueStrings = append(valueStrings, ` ($1::bigint,
 		// 									   $2,
@@ -275,9 +275,9 @@ func CreatePost(db *pgx.ConnPool , posts []*Post, created string, threadId int64
 		// 	tx.Rollback()
 		// 	return err
 		// }
-		if post.Id == 1500000 {
-			tx.Exec("VACUUM ANALYZE")
-		}
+		// if post.Id == 1500000 {
+		// 	tx.Exec("VACUUM ANALYZE")
+		// }
 
 		// post.Thread = threadId
 		// post.Forum = forum
