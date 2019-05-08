@@ -1,19 +1,25 @@
 package models
 
 import (
-	// "database/sql"
-
-	// _ "github.com/lib/pq"
-	// "github.com/jackc/pgx"
+	"log"
+	"github.com/jackc/pgx"
 )
 
-// func NewDB(dataSourceName string) (*pgx.ConnPool , error) {
-// 	db, err := sql.Open("postgres", dataSourceName)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if err = db.Ping(); err != nil {
-// 		return nil, err
-// 	}
-// 	return db, nil
-// }
+func NewPool(host string, port uint16, user, password, database string, maxConn int) *pgx.ConnPool {
+	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
+		ConnConfig: pgx.ConnConfig{
+			Host:     host,
+			Port:     port,
+			User:     user,
+			Password: password,
+			Database: database,
+		},
+		MaxConnections: maxConn,
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return pool
+}

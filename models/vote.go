@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/jackc/pgx"
-	// "database/sql"
 )
 
 type Vote struct {
@@ -12,7 +11,7 @@ type Vote struct {
 }
 
 
-func CreateVote(db *pgx.ConnPool , vote *Vote) (error, int32) {
+func CreateVote(pool *pgx.ConnPool , vote *Vote) (error, int32) {
 	var voteSum int32
 
 	/*
@@ -46,9 +45,8 @@ func CreateVote(db *pgx.ConnPool , vote *Vote) (error, int32) {
 	$example_table$ LANGUAGE plpgsql;
 	*/
 
-	tx, err := db.Begin()
+	tx, err := pool.Begin()
 	if err != nil {
-		// log.Println(err)
 		return err, 0
 	}
 
@@ -67,20 +65,11 @@ func CreateVote(db *pgx.ConnPool , vote *Vote) (error, int32) {
 					   vote.Thread).Scan(&voteSum)
 					   
 	if err != nil {
-		// log.Println(err)
 		tx.Rollback()
 		return err, 0
 	}
 	
-	tx.Commit()
-	// _, err := db.Exec("DELETE FROM votes WHERE user_nickname = $1 AND thread = $2",
-	// 	vote.Nickname, vote.Thread)
-	// _ = err
-	// _, err = db.Exec("INSERT INTO votes (user_nickname, voice, thread) VALUES ($1, $2, $3)",
-	// 	vote.Nickname, vote.Voice, vote.Thread)
-	// err = db.QueryRow("SELECT votes FROM threads WHERE id = $1", vote.Thread).Scan(&voteSum)
-
-	// err := db.QueryRow(query, vote.Nickname, vote.Thread).Scan(&voteSum)
+	err = tx.Commit()
 
 	return err, voteSum
 }

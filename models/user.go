@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/jackc/pgx"
-	// "database/sql"
 	_ "encoding/json"
 	"fmt"
 	"log"
@@ -15,7 +14,7 @@ type User struct {
 	Email    string `json:"email"`
 }
 
-func UpdateUser(db *pgx.ConnPool , user *User) error {
+func UpdateUser(pool *pgx.ConnPool , user *User) error {
 	query := `
 		UPDATE users 
 		SET fullname = CASE
@@ -33,21 +32,21 @@ func UpdateUser(db *pgx.ConnPool , user *User) error {
 		RETURNING fullname, about, email
 	`
 
-	err := db.QueryRow(query, user.Fullname, user.About, user.Email, user.Nickname).Scan(
+	err := pool.QueryRow(query, user.Fullname, user.About, user.Email, user.Nickname).Scan(
 		&user.Fullname, &user.About, &user.Email)
 
 
 	return err
 }
 
-func CreateUser(db *pgx.ConnPool , user *User) ([]*User, bool) {
+func CreateUser(pool *pgx.ConnPool , user *User) ([]*User, bool) {
 	users := make([]*User, 0)
-	usr, got := GetUserByNickname(db, user.Nickname)
+	usr, got := GetUserByNickname(pool, user.Nickname)
 	if got {
 		users = append(users, usr)
 	}
 
-	usr, got = GetUserByEmail(db, user.Email)
+	usr, got = GetUserByEmail(pool, user.Email)
 	if got && (len(users) == 0 || usr.Nickname != users[0].Nickname) {
 		users = append(users, usr)
 	}
@@ -59,7 +58,7 @@ func CreateUser(db *pgx.ConnPool , user *User) ([]*User, bool) {
 				($1, $2, $3, $4)
 		`
 
-		db.Exec(query, user.Nickname, user.Fullname, user.About, user.Email)
+		pool.Exec(query, user.Nickname, user.Fullname, user.About, user.Email)
 		users = append(users, user)
 		return users, true
 	} else {
@@ -67,7 +66,7 @@ func CreateUser(db *pgx.ConnPool , user *User) ([]*User, bool) {
 	}
 }
 
-func GetUserByNickname(db *pgx.ConnPool , nickname string) (*User, bool) {
+func GetUserByNickname(pool *pgx.ConnPool , nickname string) (*User, bool) {
 	usr := User{}
 
 	query := `
@@ -76,7 +75,7 @@ func GetUserByNickname(db *pgx.ConnPool , nickname string) (*User, bool) {
 		WHERE users.nickname = $1
 	`
 
-	err := db.QueryRow(query, nickname).Scan(&usr.Nickname, &usr.Fullname, &usr.About, &usr.Email)
+	err := pool.QueryRow(query, nickname).Scan(&usr.Nickname, &usr.Fullname, &usr.About, &usr.Email)
 
 	if err != nil {
 		return &usr, false
@@ -85,7 +84,7 @@ func GetUserByNickname(db *pgx.ConnPool , nickname string) (*User, bool) {
 	return &usr, true
 }
 
-func GetUserByEmail(db *pgx.ConnPool , email string) (*User, bool) {
+func GetUserByEmail(pool *pgx.ConnPool , email string) (*User, bool) {
 	usr := User{}
 
 	query := `
@@ -94,7 +93,7 @@ func GetUserByEmail(db *pgx.ConnPool , email string) (*User, bool) {
 		WHERE users.email = $1
 	`
 
-	err := db.QueryRow(query, email).Scan(&usr.Nickname, &usr.Fullname, &usr.About, &usr.Email)
+	err := pool.QueryRow(query, email).Scan(&usr.Nickname, &usr.Fullname, &usr.About, &usr.Email)
 
 	if err != nil {
 		return &usr, false
@@ -103,7 +102,7 @@ func GetUserByEmail(db *pgx.ConnPool , email string) (*User, bool) {
 	return &usr, true
 }
 
-func GetForumUsers(db *pgx.ConnPool , forum string, limit string, since string, desc string) ([]*User, bool) {
+func GetForumUsers(pool *pgx.ConnPool , forum string, limit string, since string, desc string) ([]*User, bool) {
 	users := make([]*User, 0)
 
 	// query := `
@@ -114,22 +113,14 @@ func GetForumUsers(db *pgx.ConnPool , forum string, limit string, since string, 
 	// 	WHERE (threads.forum = $1 OR posts.forum = $1) 
 	// `
 
-	// query := `
-	// 	SELECT nickname, about, fullname, email
-	// 	FROM users u 
-	// 	WHERE 
-	// 		(EXISTS (SELECT id FROM posts p WHERE p.author = u.nickname AND p.forum = $1) 
-	// 		OR 
-	// 		EXISTS (SELECT id FROM threads t WHERE t.author = u.nickname AND t.forum = $1))
-	// `
-
 	query := `
 		SELECT nickname, about, fullname, email
-		FROM forum_users
+		FROM users u 
 		WHERE 
-			forum_slug = $1
+			(EXISTS (SELECT id FROM posts p WHERE p.author = u.nickname AND p.forum = $1) 
+			OR 
+			EXISTS (SELECT id FROM threads t WHERE t.author = u.nickname AND t.forum = $1))
 	`
-
 
 	eqOp := ""
 	if desc == "true" {
@@ -153,13 +144,8 @@ func GetForumUsers(db *pgx.ConnPool , forum string, limit string, since string, 
 		query += fmt.Sprintf(` LIMIT %s `, limit)
 	}
 
-	rows, err := db.Query(query, forum)
+	rows, err := pool.Query(query, forum)
 	defer rows.Close()
-	// fmt.Println("get users: ", err)
-
-	// if rows == nil {
-	// 	fmt.Print("Parametrs: ", desc, limit, since)
-	// }
 
 	for rows.Next() {
 		user := User{}
@@ -170,7 +156,6 @@ func GetForumUsers(db *pgx.ConnPool , forum string, limit string, since string, 
 		users = append(users, &user)
 	}
 	rows.Close()
-	// fmt.Println(err)
 
 	return users, true
 }

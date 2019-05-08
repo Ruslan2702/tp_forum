@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 	"github.com/jackc/pgx"
-	// "database/sql"
 	"fmt"
 	"log"
 )
@@ -20,7 +19,7 @@ type Thread struct {
 }
 
 
-func GetForumThreads(db *pgx.ConnPool , forum string, limit string, since string, desc string) ([]*Thread, bool) {
+func GetForumThreads(pool *pgx.ConnPool , forum string, limit string, since string, desc string) ([]*Thread, bool) {
 	threads := make([]*Thread, 0)
 
 	query := `
@@ -51,16 +50,8 @@ func GetForumThreads(db *pgx.ConnPool , forum string, limit string, since string
 		query += fmt.Sprintf(" LIMIT %s ", limit)
 	}
 
-	rows, err := db.Query(query, forum)
+	rows, err := pool.Query(query, forum)
 	defer rows.Close()
-
-	// if rows == nil {
-	// 	fmt.Print("Parametrs: ", desc, limit, since)
-	// }
-
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
 
 	for rows.Next() {
 		thread := Thread{}
@@ -72,29 +63,14 @@ func GetForumThreads(db *pgx.ConnPool , forum string, limit string, since string
 		threads = append(threads, &thread)
 	}
 	rows.Close()
-	// fmt.Println(err)
 
 	return threads, true
 }
 
 
-func CreateThread(db *pgx.ConnPool , thread *Thread) error {
+func CreateThread(pool *pgx.ConnPool , thread *Thread) error {
 	var err error
 
-	// query := `
-	// 	INSERT INTO threads (author, message, forum, slug, title, created)
-	// 	(SELECT $1,
-	// 			$2,
-	// 			$3,
-	// 			$4,
-	// 			$5,
-	// 			CASE WHEN $6::timestamp IS NOT NULL
-	// 				THEN $6::timestamp
-	// 				ELSE now()
-	// 			END
-	// 	)
-	// 	RETURNING id;
-	// `
 	query := `
 		INSERT INTO threads (author, message, forum, slug, title, created)
 		(SELECT $1,
@@ -107,7 +83,7 @@ func CreateThread(db *pgx.ConnPool , thread *Thread) error {
 		RETURNING id;
 	`
 
-	err = db.QueryRow(query, thread.Author, thread.Message, thread.Forum, 
+	err = pool.QueryRow(query, thread.Author, thread.Message, thread.Forum, 
 		thread.Slug, thread.Title, thread.Created).Scan(&thread.Id)
 
 	/*
@@ -133,7 +109,7 @@ func CreateThread(db *pgx.ConnPool , thread *Thread) error {
 }
 
 
-func GetThreadBySlug(db *pgx.ConnPool , slug string) (*Thread, bool) {
+func GetThreadBySlug(pool *pgx.ConnPool , slug string) (*Thread, bool) {
 	thread := Thread{}
 
 	query := `
@@ -142,7 +118,7 @@ func GetThreadBySlug(db *pgx.ConnPool , slug string) (*Thread, bool) {
 		WHERE threads.slug = $1
 	`
 
-	err := db.QueryRow(query, slug).Scan(&thread.Id, &thread.Title,
+	err := pool.QueryRow(query, slug).Scan(&thread.Id, &thread.Title,
 		&thread.Author, &thread.Forum, &thread.Message, &thread.Votes, &thread.Slug, &thread.Created)
 
 	if err != nil {
@@ -153,7 +129,7 @@ func GetThreadBySlug(db *pgx.ConnPool , slug string) (*Thread, bool) {
 }
 
 
-func GetThreadById(db *pgx.ConnPool , id string) (*Thread, bool) {
+func GetThreadById(pool *pgx.ConnPool , id string) (*Thread, bool) {
 	thread := Thread{}
 
 	query := `
@@ -162,7 +138,7 @@ func GetThreadById(db *pgx.ConnPool , id string) (*Thread, bool) {
 		WHERE threads.id = $1
 	`
 
-	err := db.QueryRow(query, id).Scan(&thread.Id, &thread.Title,
+	err := pool.QueryRow(query, id).Scan(&thread.Id, &thread.Title,
 		&thread.Author, &thread.Forum, &thread.Message, &thread.Votes, &thread.Slug, &thread.Created)
 
 	if err != nil {
@@ -173,7 +149,7 @@ func GetThreadById(db *pgx.ConnPool , id string) (*Thread, bool) {
 }
 
 
-func UpdateThread(db *pgx.ConnPool , id int64, newThread *Thread, oldThread *Thread) error {
+func UpdateThread(pool *pgx.ConnPool , id int64, newThread *Thread, oldThread *Thread) error {
 	query := `
 		UPDATE threads 
 		SET title = CASE
@@ -186,7 +162,7 @@ func UpdateThread(db *pgx.ConnPool , id int64, newThread *Thread, oldThread *Thr
 		WHERE id = $3
 		RETURNING Title, Message
 	`
-	err := db.QueryRow(query, newThread.Title, newThread.Message, id).Scan(&oldThread.Title, &oldThread.Message)
+	err := pool.QueryRow(query, newThread.Title, newThread.Message, id).Scan(&oldThread.Title, &oldThread.Message)
 
 	return err
 }

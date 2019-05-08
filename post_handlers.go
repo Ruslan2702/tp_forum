@@ -5,47 +5,29 @@ import (
 	"time"
 	"encoding/json"
 	"forum/models"
-	// "io/ioutil"
-	// "net/http"
 	"strconv"
 	"strings"
-
-	// "github.com/gorilla/mux"
 )
 
 func (env *Env) createPost(ctx *fasthttp.RequestCtx) {
-	// vars := mux.Vars(r)
-	// thread := vars["slug"]
-
 	thread := ctx.UserValue("slug").(string)
 
-	// posts := []*models.Post{}
 	posts := models.Posts{}
-	// body, _ := ioutil.ReadAll(r.Body)
-
-	// json.Unmarshal(body, &posts)
 	posts.UnmarshalJSON(ctx.PostBody())
-	// posts.UnmarshalJSON(body)
-
-	// allPosts := make([]*models.Post, 0)
-	// allPosts := models.Post{}
-	// savedCreated := ""
 
 	var has bool
 	var msg map[string]string
 	var commonForum string
 	var ThreadId int64
-	// var thrSlug string
 	if _, err := strconv.Atoi(thread); err == nil {
-		oldThread, here := models.GetThreadById(env.db, thread)
+		oldThread, here := models.GetThreadById(env.pool, thread)
 		has = here
 		commonForum = oldThread.Forum
 		ThreadId, _ = strconv.ParseInt(thread, 10, 64)
 		msg = map[string]string{"message": "Can't find thread by id: " + thread}
 	} else {
-		oldThread, here := models.GetThreadBySlug(env.db, thread)
+		oldThread, here := models.GetThreadBySlug(env.pool, thread)
 		has = here
-		// thrSlug = thread
 		ThreadId = oldThread.Id
 		commonForum = oldThread.Forum
 		msg = map[string]string{"message": "Can't find thread by slug: " + thread}
@@ -53,8 +35,6 @@ func (env *Env) createPost(ctx *fasthttp.RequestCtx) {
 
 	if !has {
 		outStr, _ := json.Marshal(msg)
-		// w.WriteHeader(http.StatusNotFound)
-		// w.Write(outStr)
 		ctx.SetStatusCode(fasthttp.StatusNotFound)
 		ctx.Write(outStr)
 		return
@@ -63,25 +43,19 @@ func (env *Env) createPost(ctx *fasthttp.RequestCtx) {
 	user := &models.User{}
 	if len(posts) > 0 {
 		post := posts[0]
-		user, has = models.GetUserByNickname(env.db, post.Author)
+		user, has = models.GetUserByNickname(env.pool, post.Author)
 		if !has {
 			msg := map[string]string{"message": "Can't find user by nickname: " + post.Author}
 			outStr, _ := json.Marshal(msg)
-			// w.WriteHeader(http.StatusNotFound)
-			// w.Write(outStr)
 			ctx.SetStatusCode(fasthttp.StatusNotFound)
 			ctx.Write(outStr)
 			return
 		}
 		
 		if post.Parent != 0 {
-			if !models.CheckParentPost(env.db, post.Parent, ThreadId) {
-				// tx.Rollback()
-				// return fmt.Errorf("can't find parent node")
+			if !models.CheckParentPost(env.pool, post.Parent, ThreadId) {
 				msg := map[string]string{"message": "Can't find parent post"}
 				outStr, _ := json.Marshal(msg)
-				// w.WriteHeader(http.StatusConflict)
-				// w.Write(outStr)
 				ctx.SetStatusCode(fasthttp.StatusConflict)
 				ctx.Write(outStr)
 				return
@@ -91,186 +65,55 @@ func (env *Env) createPost(ctx *fasthttp.RequestCtx) {
 
 	created := time.Now().Format(time.RFC3339Nano)
 
-	// for _, post := range posts {
-	// 	post.Forum = commonForum
-	// 	post.Thread = ThreadId
-	// 	post.ThreadSlug = thrSlug
-	// 	if post.Created == "" {
-	// 		post.Created = created
-	// 	}
-
-		// _, has = models.GetUserByNickname(env.db, post.Author)
-		// if !has {
-		// 	msg := map[string]string{"message": "Can't find user by nickname: " + post.Author}
-		// 	outStr, _ := json.Marshal(msg)
-		// 	w.WriteHeader(http.StatusNotFound)
-		// 	w.Write(outStr)
-		// 	return
-		// }
-
-	// 	if post.Parent != 0 {
-	// 		if !models.CheckParentPost(env.db, post.Parent, post.Thread) {
-	// 			msg := map[string]string{"message": "Can't find parent post"}
-	// 			outStr, _ := json.Marshal(msg)
-	// 			w.WriteHeader(http.StatusConflict)
-	// 			w.Write(outStr)
-	// 			return
-	// 		}
-	// 	}
-
-	err := models.CreatePost(env.db, posts, created, ThreadId, commonForum, user)
+	err := models.CreatePost(env.pool, posts, created, ThreadId, commonForum, user)
 	if err != nil {
 		msg := map[string]string{"message": "Can't find parent post"}
 		outStr, _ := json.Marshal(msg)
-		// w.WriteHeader(http.StatusConflict)
-		// w.Write(outStr)
 		ctx.SetStatusCode(fasthttp.StatusConflict)
 		ctx.Write(outStr)
 		return
 	}
 
-	// 	if post.Message != "" {
-	// 		allPosts = append(allPosts, post)
-	// 	}
-	// }
-
-	// (allPosts).(models.Posts)
-	// outStr, _ := json.Marshal(allPosts)
 	outStr, _ := models.Posts(posts).MarshalJSON()
-
-	// w.WriteHeader(http.StatusCreated)
-	// w.Write(outStr)
 
 	ctx.SetStatusCode(fasthttp.StatusCreated)
 	ctx.Write(outStr)
 }
 
-// func (env *Env) createPost(ctx *fasthttp.RequestCtx) {
-// 	vars := mux.Vars(r)
-// 	thread := vars["slug"]
-
-// 	posts := make([]*models.Post, 0)
-// 	body, _ := ioutil.ReadAll(r.Body)
-
-// 	json.Unmarshal(body, &posts)
-
-// 	// allPosts := make([]*models.Post, 0)
-
-// 	var has bool
-// 	var msg map[string]string
-// 	var commonForum string
-// 	var ThreadId int64
-// 	// var thrSlug string
-// 	if _, err := strconv.Atoi(thread); err == nil {
-// 		oldThread, here := models.GetThreadById(env.db, thread)
-// 		has = here
-// 		commonForum = oldThread.Forum
-// 		ThreadId, _ = strconv.ParseInt(thread, 10, 64)
-// 		msg = map[string]string{"message": "Can't find thread by id: " + thread}
-// 	} else {
-// 		oldThread, here := models.GetThreadBySlug(env.db, thread)
-// 		has = here
-// 		// thrSlug = thread
-// 		ThreadId = oldThread.Id
-// 		commonForum = oldThread.Forum
-// 		msg = map[string]string{"message": "Can't find thread by slug: " + thread}
-// 	}
-
-// 	if !has {
-// 		outStr, _ := json.Marshal(msg)
-// 		w.WriteHeader(http.StatusNotFound)
-// 		w.Write(outStr)
-// 		return
-// 	}
-
-// 	// for _, post := range posts {
-// 	// 	post.Forum = commonForum
-// 	// 	post.Thread = ThreadId
-// 	// 	post.ThreadSlug = thrSlug
-
-// 	// _, has = models.GetUserByNickname(env.db, posts[0].Author)
-// 	// if !has {
-// 	// 	msg := map[string]string{"message": "Can't find user by nickname: " + post.Author}
-// 	// 	outStr, _ := json.Marshal(msg)
-// 	// 	w.WriteHeader(http.StatusNotFound)
-// 	// 	w.Write(outStr)
-// 	// 	return
-// 	// }
-
-// 		// if post.Parent != 0 {
-// 		// 	if !models.CheckParentPost(env.db, post.Parent, post.Thread) {
-// 		// 		msg := map[string]string{"message": "Can't find parent post"}
-// 		// 		outStr, _ := json.Marshal(msg)
-// 		// 		w.WriteHeader(http.StatusConflict)
-// 		// 		w.Write(outStr)
-// 		// 		return
-// 		// 	}
-// 		// }
-
-// 	models.CreatePost(env.db, posts, ThreadId, commonForum, time.Now().Format(time.UnixDate))
-
-// 		// if post.Message != "" {
-// 		// 	allPosts = append(allPosts, resultPost)
-// 		// }
-	
-
-// 	outStr, _ := json.Marshal(posts)
-
-// 	w.WriteHeader(http.StatusCreated)
-// 	w.Write(outStr)
-// }
-
 
 func (env *Env) updatePost(ctx *fasthttp.RequestCtx) {
-	// vars := mux.Vars(r)
-	// postId := vars["id"]
-
 	postId := ctx.UserValue("id").(string)
 
 	var has bool
-
-	oldPost, has := models.GetPostById(env.db, postId)
+	oldPost, has := models.GetPostById(env.pool, postId)
 
 	if !has {
 		msg := map[string]string{"message": "Can't find post by id: " + postId}
 		outStr, _ := json.Marshal(msg)
-		// w.WriteHeader(http.StatusNotFound)
-		// w.Write(outStr)
 		ctx.SetStatusCode(fasthttp.StatusNotFound)
 		ctx.Write(outStr)
 		return
 	}
 
 	post := &models.Post{}
-	// body, _ := ioutil.ReadAll(r.Body)
-	// json.Unmarshal(body, &post)
 	post.UnmarshalJSON(ctx.PostBody())
 
 	if post.Message != "" {
 		if post.Message != oldPost.Message {
-			oldPost.Message = models.UpdatePost(env.db, postId, *post)
+			oldPost.Message = models.UpdatePost(env.pool, postId, *post)
 			oldPost.IsEdited = true
 		}
 	}
 
-	// outStr, _ := json.Marshal(oldPost)
 	outStr, _ := oldPost.MarshalJSON()
-	// w.WriteHeader(http.StatusOK)
-	// w.Write(outStr)
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	ctx.Write(outStr)
 }
 
 func (env *Env) detailsPost(ctx *fasthttp.RequestCtx) {
-	// vars := mux.Vars(r)
-	// postId := vars["id"]
-
 	postId := ctx.UserValue("id").(string)
 
-
-	// related := r.FormValue("related")
 	related := string(ctx.FormValue("related"))
-
 
 	flagUser := false
 	flagForum := false
@@ -289,24 +132,24 @@ func (env *Env) detailsPost(ctx *fasthttp.RequestCtx) {
 
 	postDetail := models.PostDetails{}
 
-	post, has := models.GetPostById(env.db, postId)
+	post, has := models.GetPostById(env.pool, postId)
 	if has {
 		if flagForum {
-			forum, _ := models.GetForumBySlug(env.db, post.Forum)
+			forum, _ := models.GetForumBySlug(env.pool, post.Forum)
 			postDetail.MyForum = forum
 		} else {
 			postDetail.MyForum = nil
 		}
 
 		if flagThread {
-			thread, _ := models.GetThreadById(env.db, strconv.FormatInt(post.Thread, 10))
+			thread, _ := models.GetThreadById(env.pool, strconv.FormatInt(post.Thread, 10))
 			postDetail.MyThread = thread
 		} else {
 			postDetail.MyThread = nil
 		}
 
 		if flagUser {
-			author, _ := models.GetUserByNickname(env.db, post.Author)
+			author, _ := models.GetUserByNickname(env.pool, post.Author)
 			postDetail.MyAuthor = author
 		} else {
 			postDetail.MyAuthor = nil
@@ -314,10 +157,7 @@ func (env *Env) detailsPost(ctx *fasthttp.RequestCtx) {
 
 		postDetail.MyPost = post
 
-		// outStr, _ := json.Marshal(postDetail)
 		outStr, _ := postDetail.MarshalJSON()
-		// w.WriteHeader(http.StatusOK)
-		// w.Write(outStr)
 		ctx.SetStatusCode(fasthttp.StatusOK)
 		ctx.Write(outStr)
 		return
@@ -325,17 +165,12 @@ func (env *Env) detailsPost(ctx *fasthttp.RequestCtx) {
 
 	msg := map[string]string{"message": "Can't find post by id: " + postId}
 	outStr, _ := json.Marshal(msg)
-	// w.WriteHeader(http.StatusNotFound)
-	// w.Write(outStr)
 	ctx.SetStatusCode(fasthttp.StatusNotFound)
 	ctx.Write(outStr)
 }
 
 
 func (env *Env) getPostsList(ctx *fasthttp.RequestCtx) {
-	// vars := mux.Vars(r)
-	// thread := vars["slug"]
-
 	thread := ctx.UserValue("slug").(string)
 
 	var has bool
@@ -344,39 +179,30 @@ func (env *Env) getPostsList(ctx *fasthttp.RequestCtx) {
 	var ThreadId string
 
 	if _, err := strconv.Atoi(thread); err == nil {
-		oldThread, has = models.GetThreadById(env.db, thread)
+		oldThread, has = models.GetThreadById(env.pool, thread)
 		ThreadId = thread
 		msg = map[string]string{"message": "Can't find thread by id: " + thread}
 	} else {
-		oldThread, has = models.GetThreadBySlug(env.db, thread)
+		oldThread, has = models.GetThreadBySlug(env.pool, thread)
 		ThreadId = strconv.FormatInt(oldThread.Id, 10)
 		msg = map[string]string{"message": "Can't find thread by slug: " + thread}
 	}
 
 	if !has {
 		outStr, _ := json.Marshal(msg)
-		// w.WriteHeader(http.StatusNotFound)
-		// w.Write(outStr)
 		ctx.SetStatusCode(fasthttp.StatusNotFound)
 		ctx.Write(outStr)
 		return
 	}
-
-	// limit := r.FormValue("limit")
-	// since := r.FormValue("since")
-	// sort := r.FormValue("sort")
-	// desc := r.FormValue("desc")
 
 	limit := string(ctx.FormValue("limit"))
 	since := string(ctx.FormValue("since"))
 	sort := string(ctx.FormValue("sort"))
 	desc := string(ctx.FormValue("desc"))
 
-	posts, _ := models.GetPostsList(env.db, ThreadId, limit, since, sort, desc)
+	posts, _ := models.GetPostsList(env.pool, ThreadId, limit, since, sort, desc)
 
 	outStr, _ := json.Marshal(posts)
-	// w.WriteHeader(http.StatusOK)
-	// w.Write(outStr)
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	ctx.Write(outStr)
 }

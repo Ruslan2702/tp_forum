@@ -14,31 +14,20 @@ type Forum struct {
 }
 
 
-func CreateForum(db *pgx.ConnPool , forum *Forum) bool {
+func CreateForum(pool *pgx.ConnPool , forum *Forum) bool {
 	query := `
 		INSERT INTO forums (title, user_nickname, slug, posts, threads)
 		VALUES 
 			($1, $2, $3, $4, $5)
 	`
 
-	_, err := db.Exec(query, forum.Title, forum.User, forum.Slug, forum.Posts, forum.Threads)
+	_, err := pool.Exec(query, forum.Title, forum.User, forum.Slug, forum.Posts, forum.Threads)
 	_ = err
 	return true
 }
 
-func AttachUserToForum(db *pgx.ConnPool , slug string, user *User) bool {
-	query := `
-		INSERT INTO forum_users (nickname, fullname, about, email, forum_slug) 
-		VALUES 
-			($1, $2, $3, $4, $5)
-	`
 
-	_, err := db.Exec(query, user.Nickname, user.Fullname, user.About, user.Email, slug)
-	_ = err
-	return true
-}
-
-func GetForumBySlug(db *pgx.ConnPool , slug string) (*Forum, bool) {
+func GetForumBySlug(pool *pgx.ConnPool , slug string) (*Forum, bool) {
 	forum := Forum{}
 
 	query := `
@@ -47,7 +36,7 @@ func GetForumBySlug(db *pgx.ConnPool , slug string) (*Forum, bool) {
 		WHERE forums.slug = $1
 	`
 
-	err := db.QueryRow(query, slug).Scan(&forum.Title, &forum.User, &forum.Slug, &forum.Posts, &forum.Threads)
+	err := pool.QueryRow(query, slug).Scan(&forum.Title, &forum.User, &forum.Slug, &forum.Posts, &forum.Threads)
 
 	if err != nil {
 		return &forum, false
